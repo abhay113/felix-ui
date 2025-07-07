@@ -4,7 +4,7 @@ import Dashboard from './pages/Dashboard.tsx';
 import './App.css';
 
 
-const App = ({ keycloak }: { keycloak: any }) => {
+const App = ({ keycloak }: { keycloak }) => {
   const isLoggedIn = keycloak.authenticated;
   const navigate = useNavigate();
   const location = useLocation();
