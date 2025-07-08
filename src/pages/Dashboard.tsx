@@ -5,14 +5,17 @@ import {
   TrendingUp, TrendingDown, Wallet, History, ShoppingCart, DollarSign,
   Monitor, Plus, Minus, ArrowUpRight, ArrowDownRight, Eye, EyeOff, Server,
   Cloud, Database, Code, Smartphone, Laptop, Wifi, HardDrive
+  
 } from 'lucide-react';
+import { keycloak } from '../keycloak.ts';
+
 import { useLocation } from 'react-router-dom';
 
-const Dashboard = ({ keycloak}) => {
-  console.log("keycloakkeycloakkeycloak",keycloak);
-  
-   const isLoggedIn = keycloak.authenticated;
-  const location = useLocation();
+const Dashboard = ({ username}) => {
+
+    console.log("usernameusernameusernameusername",username);
+    
+
 
   const mockUser = {
     name: 'John Doe',
@@ -24,14 +27,14 @@ const Dashboard = ({ keycloak}) => {
     }
   };
 
-  useEffect(() => {
-    const publicPaths = ['/login', '/signup'];
-    const username = keycloak?.tokenParsed?.preferred_username;
+//   useEffect(() => {
+//     const publicPaths = ['/login', '/signup'];
+//     const username = keycloak?.tokenParsed?.preferred_username;
 
-    if (!username && !publicPaths.includes(location.pathname)) {
-      keycloak.login();
-    }
-  }, [keycloak, location.pathname]);
+//     if (!username && !publicPaths.includes(location.pathname)) {
+//       keycloak.login();
+//     }
+//   }, [keycloak, location.pathname]);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [activeSection, setActiveSection] = useState('dashboard');
   const [activeFeature, setActiveFeature] = useState(0);
@@ -402,7 +405,7 @@ const Dashboard = ({ keycloak}) => {
                 backdropFilter: 'blur(10px)'
               }}>
                 <Star className="w-4 h-4 mr-2 text-yellow-400" />
-                <span className="text-sm">Welcome {keycloak.tokenParsed?.given_name} - Premium IT Services</span>
+                <span className="text-sm">Welcome {username} - Premium IT Services</span>
               </div>
               
               <h1 className="text-5xl md:text-7xl font-bold mb-6">
@@ -553,14 +556,14 @@ const Dashboard = ({ keycloak}) => {
             <div className="flex items-center space-x-3 mb-3">
               <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center">
                 <span className="text-xs font-bold text-white">
-                  {keycloak.tokenParsed?.given_name.split(' ').map(n => n[0]).join('')}
+                  {username?.split(' ').map(n => n[0]).join('')}
                 </span>
               </div>
               <div>
             <div className="text-sm font-semibold">
-              {keycloak.tokenParsed?.given_name?.charAt(0).toUpperCase() + keycloak.tokenParsed?.given_name?.slice(1)}
+              {username?.charAt(0).toUpperCase() + username?.slice(1)}
             </div>               
-             {/* <div className="text-xs text-gray-400">Enterprise Client</div> */}
+             <div className="text-xs text-gray-400">Enterprise Client</div>
               </div>
             </div>
             <button className="w-full bg-red-600/20 text-red-400 py-2 rounded-lg text-sm font-medium hover:bg-red-600/30 transition-colors" onClick={() => keycloak.logout()}>
@@ -592,7 +595,6 @@ const Dashboard = ({ keycloak}) => {
             </div>
           </nav>
 
-          Content
           <div className="p-6">
             {renderContent()}
           </div>
@@ -600,7 +602,7 @@ const Dashboard = ({ keycloak}) => {
       </div>
 
       {/* Mobile Menu */}
-      {/* {isMenuOpen && (
+      {isMenuOpen && (
         <div className="lg:hidden fixed inset-0 bg-black/80 backdrop-blur-sm z-50">
           <div className="w-64 bg-black/90 h-full p-4">
             <div className="flex items-center justify-between mb-8">
@@ -664,7 +666,7 @@ const Dashboard = ({ keycloak}) => {
             </nav>
           </div>
         </div>
-      )} */}
+      )} 
     </div>
   );
 };

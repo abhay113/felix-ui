@@ -5,34 +5,34 @@ import './App.css';
 
 
 const App = ({ keycloak }: { keycloak: any }) => {
-
-  console.log(":LFKFJJFFKFKLFFL",keycloak);
-  
   const isLoggedIn = keycloak.authenticated;
   const navigate = useNavigate();
   const location = useLocation();
 
+  const username = keycloak?.tokenParsed?.given_name;
+
   useEffect(() => {
     const publicPaths = ['/login', '/signup'];
-    const username = keycloak?.tokenParsed?.preferred_username;
-
     if (!username && !publicPaths.includes(location.pathname)) {
       keycloak.login();
     }
-  }, [keycloak, location.pathname]);
+  }, [keycloak, location.pathname, username]);
 
   return (
     <div>
-     
-
-      {/* Routing */}
       <Routes>
-        
-        <Route path="/dashboard" element={<Dashboard keycloak={keycloak} />} />
-        <Route path="*" element={<Dashboard keycloak={keycloak} />} />
+        <Route
+          path="/dashboard"
+          element={<Dashboard  username={username} />}
+        />
+        <Route
+          path="*"
+          element={<Dashboard  username={username}  />}
+        />
       </Routes>
     </div>
   );
 };
+
 
 export default App;
