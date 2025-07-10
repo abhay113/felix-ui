@@ -148,7 +148,7 @@ const Dashboard = ({ username }) => {
       onClick={() => onClick(id)}
       className={`flex items-center space-x-3 px-4 py-3 rounded-lg transition-all duration-300 ${isActive
         ? 'bg-blue-600 text-white'
-        : 'text-gray-300 hover:bg-blue-600/20 hover:text-white'
+        : 'text-gray-700 hover:bg-blue-600/20 hover:text-blue-800' // Changed text and hover color for light background
         }`}
     >
       {icon}
@@ -159,10 +159,10 @@ const Dashboard = ({ username }) => {
   const AccountSection = () => (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h2 className="text-2xl font-bold">My Account</h2>
+        <h2 className="text-2xl font-bold text-gray-800">My Account</h2> {/* Changed text color */}
         <button
           onClick={() => setShowBalance(!showBalance)}
-          className="flex items-center space-x-2 text-gray-400 hover:text-white transition-colors"
+          className="flex items-center space-x-2 text-gray-600 hover:text-gray-800 transition-colors" // Changed text and hover color
         >
           {showBalance ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
           <span>{showBalance ? 'Hide' : 'Show'} Details</span>
@@ -170,47 +170,47 @@ const Dashboard = ({ username }) => {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="bg-gradient-to-br from-blue-600/20 to-purple-600/20 rounded-2xl p-6 border border-white/10">
+        <div className="bg-gradient-to-br from-blue-200 to-purple-200 rounded-2xl p-6 border border-gray-200"> {/* Changed background and border */}
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-semibold text-gray-300">Account Balance</h3>
-            <DollarSign className="w-6 h-6 text-green-400" />
+            <h3 className="text-lg font-semibold text-gray-700">Account Balance</h3> {/* Changed text color */}
+            <DollarSign className="w-6 h-6 text-green-600" /> {/* Adjusted color for contrast */}
           </div>
-          <div className="text-3xl font-bold text-white">
+          <div className="text-3xl font-bold text-gray-900"> {/* Changed text color */}
             {showBalance ? `$${mockUser.balance.USD.toLocaleString()}` : '••••••'}
           </div>
         </div>
 
-        <div className="bg-white/5 rounded-2xl p-6 border border-white/10">
+        <div className="bg-white rounded-2xl p-6 border border-gray-200"> {/* Changed background and border */}
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-semibold text-gray-300">Service Credits</h3>
-            <Monitor className="w-6 h-6 text-blue-400" />
+            <h3 className="text-lg font-semibold text-gray-700">Service Credits</h3> {/* Changed text color */}
+            <Monitor className="w-6 h-6 text-blue-600" /> {/* Adjusted color for contrast */}
           </div>
-          <div className="text-2xl font-bold text-white">
+          <div className="text-2xl font-bold text-gray-900"> {/* Changed text color */}
             {showBalance ? mockUser.balance.credits : '••••'}
           </div>
-          <div className="text-sm text-gray-400">Available Credits</div>
+          <div className="text-sm text-gray-500">Available Credits</div> {/* Changed text color */}
         </div>
 
-        <div className="bg-white/5 rounded-2xl p-6 border border-white/10">
+        <div className="bg-white rounded-2xl p-6 border border-gray-200"> {/* Changed background and border */}
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-semibold text-gray-300">Active Licenses</h3>
-            <Shield className="w-6 h-6 text-purple-400" />
+            <h3 className="text-lg font-semibold text-gray-700">Active Licenses</h3> {/* Changed text color */}
+            <Shield className="w-6 h-6 text-purple-600" /> {/* Adjusted color for contrast */}
           </div>
-          <div className="text-2xl font-bold text-white">
+          <div className="text-2xl font-bold text-gray-900"> {/* Changed text color */}
             {showBalance ? mockUser.balance.licenses : '••••'}
           </div>
-          <div className="text-sm text-gray-400">Software Licenses</div>
+          <div className="text-sm text-gray-500">Software Licenses</div> {/* Changed text color */}
         </div>
 
-        <div className="bg-white/5 rounded-2xl p-6 border border-white/10">
+        <div className="bg-white rounded-2xl p-6 border border-gray-200"> {/* Changed background and border */}
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-semibold text-gray-300">Support Hours</h3>
-            <Users className="w-6 h-6 text-orange-400" />
+            <h3 className="text-lg font-semibold text-gray-700">Support Hours</h3> {/* Changed text color */}
+            <Users className="w-6 h-6 text-orange-600" /> {/* Adjusted color for contrast */}
           </div>
-          <div className="text-2xl font-bold text-white">
+          <div className="text-2xl font-bold text-gray-900"> {/* Changed text color */}
             {showBalance ? mockUser.balance.support_hours : '••••'}
           </div>
-          <div className="text-sm text-gray-400">Remaining Hours</div>
+          <div className="text-sm text-gray-500">Remaining Hours</div> {/* Changed text color */}
         </div>
       </div>
     </div>
@@ -218,25 +218,25 @@ const Dashboard = ({ username }) => {
 
   const ServiceSection = ({ type }) => (
     <div className="space-y-6">
-      <h2 className="text-2xl font-bold">{type === 'buy' ? 'Purchase Services' : 'Sell Services'}</h2>
+      <h2 className="text-2xl font-bold text-gray-800">{type === 'buy' ? 'Purchase Services' : 'Sell Services'}</h2> {/* Changed text color */}
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        <div className="bg-white/5 rounded-2xl p-6 border border-white/10">
-          <h3 className="text-lg font-semibold mb-4">Service Catalog</h3>
+        <div className="bg-white rounded-2xl p-6 border border-gray-200"> {/* Changed background and border */}
+          <h3 className="text-lg font-semibold text-gray-800 mb-4">Service Catalog</h3> {/* Changed text color */}
           <div className="space-y-3 max-h-96 overflow-y-auto">
             {itServices.map((service) => (
-              <div key={service.id} className="flex items-center justify-between p-3 bg-white/5 rounded-lg hover:bg-white/10 transition-colors">
+              <div key={service.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"> {/* Changed background and hover */}
                 <div className="flex items-center space-x-3">
-                  <div className="text-blue-400">{service.icon}</div>
+                  <div className="text-blue-600">{service.icon}</div> {/* Adjusted color for contrast */}
                   <div>
-                    <div className="font-semibold">{service.name}</div>
-                    <div className="text-sm text-gray-400">{service.description}</div>
+                    <div className="font-semibold text-gray-900">{service.name}</div> {/* Changed text color */}
+                    <div className="text-sm text-gray-600">{service.description}</div> {/* Changed text color */}
                   </div>
                 </div>
                 <div className="text-right">
-                  <div className="font-semibold">${service.price.toLocaleString()}</div>
-                  <div className="text-xs text-gray-400">per {service.unit}</div>
-                  <div className={`text-sm flex items-center ${service.change >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+                  <div className="font-semibold text-gray-900">${service.price.toLocaleString()}</div> {/* Changed text color */}
+                  <div className="text-xs text-gray-500">per {service.unit}</div> {/* Changed text color */}
+                  <div className={`text-sm flex items-center ${service.change >= 0 ? 'text-green-600' : 'text-red-600'}`}> {/* Adjusted color for contrast */}
                     {service.change >= 0 ? <ArrowUpRight className="w-3 h-3 mr-1" /> : <ArrowDownRight className="w-3 h-3 mr-1" />}
                     {Math.abs(service.change)}%
                   </div>
@@ -246,18 +246,18 @@ const Dashboard = ({ username }) => {
           </div>
         </div>
 
-        <div className="bg-white/5 rounded-2xl p-6 border border-white/10">
-          <h3 className="text-lg font-semibold mb-4">{type === 'buy' ? 'Place Order' : 'List Service'}</h3>
+        <div className="bg-white rounded-2xl p-6 border border-gray-200"> {/* Changed background and border */}
+          <h3 className="text-lg font-semibold text-gray-800 mb-4">{type === 'buy' ? 'Place Order' : 'List Service'}</h3> {/* Changed text color */}
           <div className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">Select Service</label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Select Service</label> {/* Changed text color */}
               <select
                 value={selectedService}
                 onChange={(e) => setSelectedService(e.target.value)}
-                className="w-full bg-white/10 border border-white/20 rounded-lg px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full bg-gray-100 border border-gray-300 rounded-lg px-4 py-3 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500" // Changed background, border, and text color
               >
                 {itServices.map((service) => (
-                  <option key={service.id} value={service.id} className="bg-gray-800">
+                  <option key={service.id} value={service.id} className="bg-gray-100"> {/* Changed background */}
                     {service.name} - ${service.price}/{service.unit}
                   </option>
                 ))}
@@ -265,7 +265,7 @@ const Dashboard = ({ username }) => {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">
+              <label className="block text-sm font-medium text-gray-700 mb-2"> {/* Changed text color */}
                 Quantity ({itServices.find(s => s.id === selectedService)?.unit || 'units'})
               </label>
               <input
@@ -274,26 +274,26 @@ const Dashboard = ({ username }) => {
                 onChange={(e) => setOrderQuantity(e.target.value)}
                 placeholder="Enter quantity"
                 min="1"
-                className="w-full bg-white/10 border border-white/20 rounded-lg px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full bg-gray-100 border border-gray-300 rounded-lg px-4 py-3 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500" // Changed background, border, and text color
               />
             </div>
 
-            <div className="bg-white/5 rounded-lg p-4">
+            <div className="bg-gray-50 rounded-lg p-4"> {/* Changed background */}
               <div className="flex justify-between items-center mb-2">
-                <span className="text-gray-300">Service:</span>
-                <span className="text-white font-medium">
+                <span className="text-gray-700">Service:</span> {/* Changed text color */}
+                <span className="text-gray-900 font-medium"> {/* Changed text color */}
                   {itServices.find(s => s.id === selectedService)?.name || 'Select Service'}
                 </span>
               </div>
               <div className="flex justify-between items-center mb-2">
-                <span className="text-gray-300">Unit Price:</span>
-                <span className="text-white font-medium">
+                <span className="text-gray-700">Unit Price:</span> {/* Changed text color */}
+                <span className="text-gray-900 font-medium"> {/* Changed text color */}
                   ${itServices.find(s => s.id === selectedService)?.price.toLocaleString() || '0.00'}
                 </span>
               </div>
-              <div className="flex justify-between items-center border-t border-white/10 pt-2">
-                <span className="text-gray-300">Total Cost:</span>
-                <span className="text-xl font-bold text-white">
+              <div className="flex justify-between items-center border-t border-gray-200 pt-2"> {/* Changed border */}
+                <span className="text-gray-700">Total Cost:</span> {/* Changed text color */}
+                <span className="text-xl font-bold text-gray-900"> {/* Changed text color */}
                   ${orderQuantity && selectedService ? (
                     parseFloat(orderQuantity) * (itServices.find(s => s.id === selectedService)?.price || 0)
                   ).toLocaleString() : '0.00'}
@@ -324,45 +324,45 @@ const Dashboard = ({ username }) => {
 
   const OrderHistorySection = () => (
     <div className="space-y-6">
-      <h2 className="text-2xl font-bold">Order History</h2>
+      <h2 className="text-2xl font-bold text-gray-800">Order History</h2> {/* Changed text color */}
 
-      <div className="bg-white/5 rounded-2xl border border-white/10 overflow-hidden">
+      <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden"> {/* Changed background and border */}
         <div className="overflow-x-auto">
           <table className="w-full">
-            <thead className="bg-white/10">
+            <thead className="bg-gray-100"> {/* Changed background */}
               <tr>
-                <th className="px-6 py-4 text-left text-sm font-medium text-gray-300">Date</th>
-                <th className="px-6 py-4 text-left text-sm font-medium text-gray-300">Type</th>
-                <th className="px-6 py-4 text-left text-sm font-medium text-gray-300">Service</th>
-                <th className="px-6 py-4 text-left text-sm font-medium text-gray-300">Quantity</th>
-                <th className="px-6 py-4 text-left text-sm font-medium text-gray-300">Price</th>
-                <th className="px-6 py-4 text-left text-sm font-medium text-gray-300">Status</th>
+                <th className="px-6 py-4 text-left text-sm font-medium text-gray-700">Date</th> {/* Changed text color */}
+                <th className="px-6 py-4 text-left text-sm font-medium text-gray-700">Type</th> {/* Changed text color */}
+                <th className="px-6 py-4 text-left text-sm font-medium text-gray-700">Service</th> {/* Changed text color */}
+                <th className="px-6 py-4 text-left text-sm font-medium text-gray-700">Quantity</th> {/* Changed text color */}
+                <th className="px-6 py-4 text-left text-sm font-medium text-gray-700">Price</th> {/* Changed text color */}
+                <th className="px-6 py-4 text-left text-sm font-medium text-gray-700">Status</th> {/* Changed text color */}
               </tr>
             </thead>
-            <tbody className="divide-y divide-white/10">
+            <tbody className="divide-y divide-gray-200"> {/* Changed divider */}
               {orderHistory.map((order) => (
-                <tr key={order.id} className="hover:bg-white/5 transition-colors">
-                  <td className="px-6 py-4 text-sm text-gray-300">
+                <tr key={order.id} className="hover:bg-gray-50 transition-colors"> {/* Changed hover background */}
+                  <td className="px-6 py-4 text-sm text-gray-700"> {/* Changed text color */}
                     {new Date(order.date).toLocaleDateString()}
                   </td>
                   <td className="px-6 py-4">
                     <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${order.type === 'buy'
-                      ? 'bg-green-600/20 text-green-400'
-                      : 'bg-blue-600/20 text-blue-400'
+                      ? 'bg-green-100 text-green-700' // Adjusted color for contrast
+                      : 'bg-blue-100 text-blue-700' // Adjusted color for contrast
                       }`}>
                       {order.type === 'buy' ? <ShoppingCart className="w-3 h-3 mr-1" /> : <DollarSign className="w-3 h-3 mr-1" />}
                       {order.type === 'buy' ? 'PURCHASE' : 'SALE'}
                     </span>
                   </td>
-                  <td className="px-6 py-4 text-sm font-medium text-white">
+                  <td className="px-6 py-4 text-sm font-medium text-gray-900"> {/* Changed text color */}
                     {itServices.find(s => s.id === order.service)?.name || order.service}
                   </td>
-                  <td className="px-6 py-4 text-sm text-gray-300">{order.quantity}</td>
-                  <td className="px-6 py-4 text-sm text-gray-300">${order.price.toLocaleString()}</td>
+                  <td className="px-6 py-4 text-sm text-gray-700">{order.quantity}</td> {/* Changed text color */}
+                  <td className="px-6 py-4 text-sm text-gray-700">${order.price.toLocaleString()}</td> {/* Changed text color */}
                   <td className="px-6 py-4">
                     <span className={`inline-flex px-2 py-1 rounded-full text-xs font-medium ${order.status === 'completed'
-                      ? 'bg-green-600/20 text-green-400'
-                      : 'bg-yellow-600/20 text-yellow-400'
+                      ? 'bg-green-100 text-green-700' // Adjusted color for contrast
+                      : 'bg-yellow-100 text-yellow-700' // Adjusted color for contrast
                       }`}>
                       {order.status}
                     </span>
@@ -380,7 +380,7 @@ const Dashboard = ({ username }) => {
   const UserManagementSection = () => (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
-        <h2 className="text-2xl font-bold">User Management</h2>
+        <h2 className="text-2xl font-bold text-gray-800">User Management</h2> {/* Changed text color */}
         <button
           onClick={() => setIsAddUserDialogOpen(true)}
           className="flex items-center space-x-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-lg transition-colors duration-300"
@@ -390,37 +390,37 @@ const Dashboard = ({ username }) => {
         </button>
       </div>
 
-      <div className="bg-white/5 rounded-2xl border border-white/10 overflow-hidden">
+      <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden"> {/* Changed background and border */}
         <div className="overflow-x-auto">
           <table className="w-full">
-            <thead className="bg-white/10">
+            <thead className="bg-gray-100"> {/* Changed background */}
               <tr>
-                <th className="px-6 py-4 text-left text-sm font-medium text-gray-300">User id</th>
-                <th className="px-6 py-4 text-left text-sm font-medium text-gray-300">User name</th>
-                <th className="px-6 py-4 text-left text-sm font-medium text-gray-300">Email</th>
-                <th className="px-6 py-4 text-left text-sm font-medium text-gray-300">Created at</th>
-                {/* <th className="px-6 py-4 text-left text-sm font-medium text-gray-300">Status</th>
-                <th className="px-6 py-4 text-left text-sm font-medium text-gray-300">Actions</th> */}
+                <th className="px-6 py-4 text-left text-sm font-medium text-gray-700">User id</th> {/* Changed text color */}
+                <th className="px-6 py-4 text-left text-sm font-medium text-gray-700">User name</th> {/* Changed text color */}
+                <th className="px-6 py-4 text-left text-sm font-medium text-gray-700">Email</th> {/* Changed text color */}
+                <th className="px-6 py-4 text-left text-sm font-medium text-gray-700">Created at</th> {/* Changed text color */}
+                {/* <th className="px-6 py-4 text-left text-sm font-medium text-gray-700">Status</th>
+                <th className="px-6 py-4 text-left text-sm font-medium text-gray-700">Actions</th> */}
               </tr>
             </thead>
-            <tbody className="divide-y divide-white/10">
+            <tbody className="divide-y divide-gray-200"> {/* Changed divider */}
               {mockUsers.map((user) => (
-                <tr key={user.id} className="hover:bg-white/5 transition-colors">
-                     <td className="px-6 py-4 text-sm font-medium text-white">{user.id}</td>
-                  <td className="px-6 py-4 text-sm font-medium text-white">{user.name}</td>
-                  <td className="px-6 py-4 text-sm text-gray-300">{user.email}</td> 
-                  <td className="px-6 py-4 text-sm text-gray-300">{user.created_at}</td>
+                <tr key={user.id} className="hover:bg-gray-50 transition-colors"> {/* Changed hover background */}
+                     <td className="px-6 py-4 text-sm font-medium text-gray-900">{user.id}</td> {/* Changed text color */}
+                  <td className="px-6 py-4 text-sm font-medium text-gray-900">{user.name}</td> {/* Changed text color */}
+                  <td className="px-6 py-4 text-sm text-gray-700">{user.email}</td> {/* Changed text color */}
+                  <td className="px-6 py-4 text-sm text-gray-700">{user.created_at}</td> {/* Changed text color */}
 {/* \                  <td className="px-6 py-4">
                     <span className={`inline-flex px-2 py-1 rounded-full text-xs font-medium ${user.created_at === 'Active'
-                      ? 'bg-green-600/20 text-green-400'
-                      : 'bg-red-600/20 text-red-400'
+                      ? 'bg-green-100 text-green-700'
+                      : 'bg-red-100 text-red-700'
                       }`}>
                       {user.status}
                     </span>
                   </td>
                   <td className="px-6 py-4 text-sm">
-                    <button className="text-blue-400 hover:text-blue-300 mr-4">Edit</button>
-                    <button className="text-red-400 hover:text-red-300">Delete</button>
+                    <button className="text-blue-600 hover:text-blue-800 mr-4">Edit</button>
+                    <button className="text-red-600 hover:text-red-800">Delete</button>
                   </td> */}
                 </tr>
               ))}
@@ -449,41 +449,41 @@ const Dashboard = ({ username }) => {
 
     return (
       <div className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50 p-4">
-        <div className="bg-gray-800 rounded-lg p-8 w-full max-w-md border border-white/10 relative">
-          <button onClick={onClose} className="absolute top-4 right-4 text-gray-400 hover:text-white">
+        <div className="bg-white rounded-lg p-8 w-full max-w-md border border-gray-200 relative"> {/* Changed background and border */}
+          <button onClick={onClose} className="absolute top-4 right-4 text-gray-500 hover:text-gray-700"> {/* Changed text and hover color */}
             <X className="w-6 h-6" />
           </button>
-          <h2 className="text-2xl font-bold mb-6 text-white">Add New User</h2>
+          <h2 className="text-2xl font-bold mb-6 text-gray-800">Add New User</h2> {/* Changed text color */}
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <label htmlFor="name" className="block text-sm font-medium text-gray-300 mb-2">Name</label>
+              <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-2">Name</label> {/* Changed text color */}
               <input
                 type="text"
                 id="name"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                className="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full bg-gray-100 border border-gray-300 rounded-lg px-4 py-3 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500" // Changed background, border, and text color
                 required
               />
             </div>
             <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-300 mb-2">Email</label>
+              <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">Email</label> {/* Changed text color */}
               <input
                 type="email"
                 id="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full bg-gray-100 border border-gray-300 rounded-lg px-4 py-3 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500" // Changed background, border, and text color
                 required
               />
             </div>
             <div>
-              <label htmlFor="role" className="block text-sm font-medium text-gray-300 mb-2">Role</label>
+              <label htmlFor="role" className="block text-sm font-medium text-gray-700 mb-2">Role</label> {/* Changed text color */}
               <select
                 id="role"
                 value={role}
                 onChange={(e) => setRole(e.target.value)}
-                className="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full bg-gray-100 border border-gray-300 rounded-lg px-4 py-3 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500" // Changed background, border, and text color
               >
                 <option value="Admin">Admin</option>
                 <option value="Editor">Editor</option>
@@ -520,20 +520,20 @@ const Dashboard = ({ username }) => {
           <div className="space-y-16">
             {/* Hero Section */}
             <section className="text-center">
-              <div className="inline-flex items-center px-4 py-2 bg-white bg-opacity-10 rounded-full border border-white border-opacity-20 mb-8" style={{
+              <div className="inline-flex items-center px-4 py-2 bg-blue-100 rounded-full border border-blue-200 mb-8" style={{ // Changed background and border
                 backdropFilter: 'blur(10px)'
               }}>
-                <Star className="w-4 h-4 mr-2 text-yellow-400" />
-                <span className="text-sm">Welcome {username} - Premium IT Services</span>
+                <Star className="w-4 h-4 mr-2 text-yellow-600" /> {/* Adjusted color for contrast */}
+                <span className="text-sm text-gray-800">Welcome {username} - Premium IT Services</span> {/* Changed text color */}
               </div>
 
               <h1 className="text-5xl md:text-7xl font-bold mb-6">
-                <span className="text-white">Internal Blockchain</span>
+                <span className="text-gray-900">Internal Blockchain</span> {/* Changed text color */}
                 <br />
-                <span className="text-purple-400">Service & Wallet</span>
+                <span className="text-blue-600">Service & Wallet</span> {/* Adjusted color for contrast */}
               </h1>
 
-              <p className="text-xl md:text-2xl text-gray-300 mb-10 max-w-3xl mx-auto leading-relaxed">
+              <p className="text-xl md:text-2xl text-gray-700 mb-10 max-w-3xl mx-auto leading-relaxed"> {/* Changed text color */}
                 Secure, scalable, and lightning-fast blockchain infrastructure designed for enterprise teams.
                 Manage digital assets with confidence.
               </p>
@@ -544,10 +544,10 @@ const Dashboard = ({ username }) => {
               <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
                 {stats.map((stat, index) => (
                   <div key={index} className="text-center">
-                    <div className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent mb-2">
+                    <div className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent mb-2"> {/* Adjusted color for contrast */}
                       {stat.value}
                     </div>
-                    <div className="text-gray-400">{stat.label}</div>
+                    <div className="text-gray-700">{stat.label}</div> {/* Changed text color */}
                   </div>
                 ))}
               </div>
@@ -559,7 +559,7 @@ const Dashboard = ({ username }) => {
                 <h2 className="text-4xl md:text-5xl font-bold mb-4">
                   Powerful IT Solutions
                 </h2>
-                <p className="text-xl text-gray-300 max-w-2xl mx-auto">
+                <p className="text-xl text-gray-700 max-w-2xl mx-auto"> {/* Changed text color */}
                   Everything you need to transform your business with cutting-edge technology.
                 </p>
               </div>
@@ -568,14 +568,14 @@ const Dashboard = ({ username }) => {
                 {features.map((feature, index) => (
                   <div
                     key={index}
-                    className="group p-6 bg-white/5 backdrop-blur-sm rounded-2xl border border-white/10 hover:border-blue-500/50 transition-all duration-300 transform hover:scale-105 cursor-pointer"
+                    className="group p-6 bg-white rounded-2xl border border-gray-200 hover:border-blue-500/50 transition-all duration-300 transform hover:scale-105 cursor-pointer" // Changed background and border
                     onMouseEnter={() => setActiveFeature(index)}
                   >
-                    <div className="text-blue-400 mb-4 group-hover:text-purple-400 transition-colors">
+                    <div className="text-blue-600 mb-4 group-hover:text-purple-600 transition-colors"> {/* Adjusted color for contrast */}
                       {feature.icon}
                     </div>
-                    <h3 className="text-xl font-semibold mb-3">{feature.title}</h3>
-                    <p className="text-gray-400 group-hover:text-gray-300 transition-colors">
+                    <h3 className="text-xl font-semibold text-gray-900 mb-3">{feature.title}</h3> {/* Changed text color */}
+                    <p className="text-gray-700 group-hover:text-gray-800 transition-colors"> {/* Changed text color */}
                       {feature.description}
                     </p>
                   </div>
@@ -588,17 +588,17 @@ const Dashboard = ({ username }) => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-900 text-white" style={{
-      background: 'linear-gradient(135deg, #1e293b 0%, #3b82f6 50%, #1e293b 100%)'
+    <div className="min-h-screen bg-white text-gray-900" style={{ // Changed bg-gray-900 to bg-white and text-white to text-gray-900
+      background: 'linear-gradient(135deg, #f0f4f8 0%, #dbeafe 50%, #f0f4f8 100%)' // Changed gradient to lighter shades
     }}>
       {/* Animated Background Elements */}
       <div className="fixed inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute w-80 h-80 bg-blue-500 rounded-full opacity-20 animate-pulse" style={{
+        <div className="absolute w-80 h-80 bg-blue-300 rounded-full opacity-30 animate-pulse" style={{ // Changed color and opacity
           top: '-10rem',
           right: '-10rem',
           filter: 'blur(40px)'
         }}></div>
-        <div className="absolute w-80 h-80 bg-purple-500 rounded-full opacity-20 animate-pulse" style={{
+        <div className="absolute w-80 h-80 bg-purple-300 rounded-full opacity-30 animate-pulse" style={{ // Changed color and opacity
           bottom: '-10rem',
           left: '-10rem',
           filter: 'blur(40px)',
@@ -608,12 +608,12 @@ const Dashboard = ({ username }) => {
 
       <div className="flex">
         {/* Sidebar */}
-        <div className="w-64 bg-black/20 backdrop-blur-sm border-r border-white/10 min-h-screen p-4 hidden lg:block">
+        <div className="w-64 bg-white/80 backdrop-blur-sm border-r border-gray-200 min-h-screen p-4 hidden lg:block"> {/* Changed background and border */}
           <div className="flex items-center space-x-2 mb-8">
-            <div className="w-8 h-8 bg-blue-500 rounded-lg flex items-center justify-center">
+            <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
               <Monitor className="w-4 h-4 text-white" />
             </div>
-            <span className="text-xl font-bold text-blue-400">
+            <span className="text-xl font-bold text-blue-700"> {/* Changed text color */}
               Felix
             </span>
           </div>
@@ -663,21 +663,21 @@ const Dashboard = ({ username }) => {
             />
           </nav>
 
-          <div className="mt-8 p-4 bg-white/5 rounded-2xl border border-white/10">
+          <div className="mt-8 p-4 bg-blue-50 rounded-2xl border border-blue-200"> {/* Changed background and border */}
             <div className="flex items-center space-x-3 mb-3">
-              <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center">
+              <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center">
                 <span className="text-xs font-bold text-white">
                   {username?.split(' ').map(n => n[0]).join('')}
                 </span>
               </div>
               <div>
-                <div className="text-sm font-semibold">
+                <div className="text-sm font-semibold text-gray-900"> {/* Changed text color */}
                   {username?.charAt(0).toUpperCase() + username?.slice(1)}
                 </div>
-                <div className="text-xs text-gray-400">Enterprise Client</div>
+                <div className="text-xs text-gray-600">Enterprise Client</div> {/* Changed text color */}
               </div>
             </div>
-            <button className="w-full bg-red-600/20 text-red-400 py-2 rounded-lg text-sm font-medium hover:bg-red-600/30 transition-colors" onClick={() => keycloak.logout()}>
+            <button className="w-full bg-red-100 text-red-700 py-2 rounded-lg text-sm font-medium hover:bg-red-200 transition-colors" onClick={() => keycloak.logout()}> {/* Changed background and text color */}
               Logout
             </button>
           </div>
@@ -686,21 +686,21 @@ const Dashboard = ({ username }) => {
         {/* Main Content */}
         <div className="flex-1">
           {/* Top Navigation */}
-          <nav className="bg-black/20 backdrop-blur-sm border-b border-white/10 p-4">
+          <nav className="bg-white/80 backdrop-blur-sm border-b border-gray-200 p-4"> {/* Changed background and border */}
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-4 lg:hidden">
                 <button
                   onClick={() => setIsMenuOpen(!isMenuOpen)}
-                  className="text-white"
+                  className="text-gray-700" // Changed text color
                 >
                   {isMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
                 </button>
-                <span className="text-xl font-bold text-blue-400">Felixs</span>
+                <span className="text-xl font-bold text-blue-700">Felixs</span> {/* Changed text color */}
               </div>
 
               <div className="hidden lg:flex items-center space-x-6">
-                <div className="text-sm text-gray-400">
-                  Account Balance: <span className="text-white font-semibold">${mockUser.balance.USD.toLocaleString()}</span>
+                <div className="text-sm text-gray-700"> {/* Changed text color */}
+                  Account Balance: <span className="text-gray-900 font-semibold">${mockUser.balance.USD.toLocaleString()}</span> {/* Changed text color */}
                 </div>
               </div>
             </div>
@@ -715,10 +715,10 @@ const Dashboard = ({ username }) => {
       {/* Mobile Menu */}
       {isMenuOpen && (
         <div className="lg:hidden fixed inset-0 bg-black/80 backdrop-blur-sm z-50">
-          <div className="w-64 bg-black/90 h-full p-4">
+          <div className="w-64 bg-white h-full p-4"> {/* Changed background */}
             <div className="flex items-center justify-between mb-8">
-              <span className="text-xl font-bold text-blue-400">Felixs</span>
-              <button onClick={() => setIsMenuOpen(false)}>
+              <span className="text-xl font-bold text-blue-700">Felixs</span> {/* Changed text color */}
+              <button onClick={() => setIsMenuOpen(false)} className="text-gray-700"> {/* Changed text color */}
                 <X className="w-6 h-6" />
               </button>
             </div>
@@ -767,7 +767,7 @@ const Dashboard = ({ username }) => {
               <NavigationItem
                 id="history"
                 icon={<History className="w-5 h-5" />}
-                label="Transaction History"
+                label="Order History"
                 isActive={activeSection === 'history'}
                 onClick={(id) => {
                   setActiveSection(id);
@@ -775,7 +775,7 @@ const Dashboard = ({ username }) => {
                 }}
               />
               <NavigationItem
-                id="users" // New Navigation Item for Users in mobile menu
+                id="users"
                 icon={<Users className="w-5 h-5" />}
                 label="Users"
                 isActive={activeSection === 'users'}
@@ -785,6 +785,25 @@ const Dashboard = ({ username }) => {
                 }}
               />
             </nav>
+
+            <div className="mt-8 p-4 bg-blue-50 rounded-2xl border border-blue-200"> {/* Changed background and border */}
+              <div className="flex items-center space-x-3 mb-3">
+                <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center">
+                  <span className="text-xs font-bold text-white">
+                    {username?.split(' ').map(n => n[0]).join('')}
+                  </span>
+                </div>
+                <div>
+                  <div className="text-sm font-semibold text-gray-900">
+                    {username?.charAt(0).toUpperCase() + username?.slice(1)}
+                  </div>
+                  <div className="text-xs text-gray-600">Enterprise Client</div>
+                </div>
+              </div>
+              <button className="w-full bg-red-100 text-red-700 py-2 rounded-lg text-sm font-medium hover:bg-red-200 transition-colors" onClick={() => keycloak.logout()}>
+                Logout
+              </button>
+            </div>
           </div>
         </div>
       )}
