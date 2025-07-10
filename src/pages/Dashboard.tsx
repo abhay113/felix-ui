@@ -1,13 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import {
-  ChevronRight, Shield, Zap, Users, Globe, ArrowRight, Check, Star, Menu, X,
-  TrendingUp, TrendingDown, Wallet, History, ShoppingCart, DollarSign,
-  Monitor, Plus, Minus, ArrowUpRight, ArrowDownRight, Eye, EyeOff, Server,
-  Cloud, Database, Code, Smartphone, Laptop, Wifi, HardDrive, UserPlus
+   Shield, Zap, Users, Globe,  Star, Menu, X,
+  TrendingUp, Wallet, History, ShoppingCart, DollarSign,
+  Monitor,  ArrowUpRight, ArrowDownRight, Eye, EyeOff, Server,
+  Cloud, Database, Code, Smartphone,  UserPlus
 } from 'lucide-react';
 import { keycloak } from '../keycloak.ts';
 
-import { useLocation } from 'react-router-dom';
 
 const Dashboard = ({ username }) => {
 
@@ -23,20 +22,20 @@ const Dashboard = ({ username }) => {
     }
   };
 
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
+   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [activeSection, setActiveSection] = useState('dashboard');
   const [activeFeature, setActiveFeature] = useState(0);
   const [scrollY, setScrollY] = useState(0);
   const [showBalance, setShowBalance] = useState(true);
-  const [selectedService, setSelectedService] = useState('WEB_DEV');
-  const [orderQuantity, setOrderQuantity] = useState('');
-  const [orderType, setOrderType] = useState('buy');
-  const [isAddUserDialogOpen, setIsAddUserDialogOpen] = useState(false); // New state for dialog
+
+  const [isAddUserDialogOpen, setIsAddUserDialogOpen] = useState(false);
+  
+
 
   // Mock IT services data
   const itServices = [
     {
-      id: 'WEB_DEV',
+      listingType: 'buy',
       name: 'Web Development',
       price: 2500.00,
       change: 5.2,
@@ -45,7 +44,7 @@ const Dashboard = ({ username }) => {
       description: 'Custom web application development'
     },
     {
-      id: 'CLOUD_HOST',
+      listingType: 'sell',
       name: 'Cloud Hosting',
       price: 150.00,
       change: -2.1,
@@ -216,115 +215,352 @@ const Dashboard = ({ username }) => {
     </div>
   );
 
-  const ServiceSection = ({ type }) => (
+const initialCatalogData = [];
+
+// staticBuyableServices: This will be used for the 'Buy' dropdown AND added to the catalog
+const staticBuyableServices = [
+  { id: 'static_web_dev', name: 'Static Web Dev Package', description: 'A basic website', price: 999, unit: 'package', icon: '📦', change: 0, listingType: ['buy', 'sell'] },
+  { id: 'static_mobile_basic', name: 'Basic Mobile App', description: 'Simple cross-platform app', price: 2500, unit: 'app', icon: '📱', change: 0, listingType: ['buy', 'sell'] },
+  { id: 'static_cloud_starter', name: 'Cloud Starter Pack', description: 'Initial cloud setup', price: 400, unit: 'setup', icon: '☁️', change: 0, listingType: ['buy', 'sell'] },
+  { id: 'static_data_report', name: 'Data Insights Report', description: 'Monthly data report', price: 150, unit: 'report', icon: '📈', change: 0, listingType: ['buy', 'sell'] },
+];
+
+const ServiceSection = ({ type }) => {
+  // State for all services in the *main catalog*
+  const [catalogServices, setCatalogServices] = useState([]);
+  const [catalogLoading, setCatalogLoading] = useState(true);
+  const [catalogError, setCatalogError] = useState(null);
+
+  // State for 'sell' form to list a user's service
+  const [sellInput, setSellInput] = useState('');
+  const [description, setDescription] = useState('');
+  const [amount, setAmount] = useState('');
+  const [sellFormErrors, setSellFormErrors] = useState({});
+  // State to store services that have been listed for sale by the user
+  const [listedServices, setListedServices] = useState([]);
+
+  // State for 'buy' form
+  // Initialize selectedService from the static data for the dropdown
+  const [selectedService, setSelectedService] = useState(staticBuyableServices[0]?.id || '');
+  const [orderQuantity, setOrderQuantity] = useState('1');
+
+  // --- Effect to simulate fetching services and populate 'catalogServices' ---
+  useEffect(() => {
+    const fetchServices = async () => {
+      setCatalogLoading(true);
+      setCatalogError(null);
+      try {
+        await new Promise(resolve => setTimeout(resolve, 800));
+
+        // Initialize catalogServices with staticBuyableServices
+        // This makes static services visible in the main catalog from the start
+        setCatalogServices([...staticBuyableServices]);
+
+        // Set default selected service for 'buy' dropdown from static data
+        setSelectedService(staticBuyableServices[0]?.id || '');
+
+      } catch (error) {
+        setCatalogError('Failed to load services. Please try again.');
+        console.error('Error fetching catalog services:', error);
+      } finally {
+        setCatalogLoading(false);
+      }
+    };
+
+    fetchServices();
+  }, []);
+
+  // Filter catalog services based on the 'type' prop for the main display
+  const filteredCatalogServices = catalogServices.filter(service => service.listingType?.includes(type));
+
+  // --- Function to handle submission for the 'sell' form (user listing) ---
+  const handleSubmitSell = (e) => {
+    e.preventDefault();
+    setSellFormErrors({});
+
+    let newErrors = {};
+    let isValid = true;
+
+    if (!sellInput.trim()) {
+      newErrors.sellInput = 'Service name is required.';
+      isValid = false;
+    }
+    if (!description.trim()) {
+      newErrors.description = 'Description is required.';
+      isValid = false;
+    }
+    if (!amount || parseFloat(amount) <= 0) {
+      newErrors.amount = 'Amount must be a positive number.';
+      isValid = false;
+    }
+
+    setSellFormErrors(newErrors);
+
+    if (isValid) {
+      const newServiceId = `user_listed_${Date.now()}`;
+
+      const newUsersListedService = {
+        id: newServiceId,
+        sellInput: sellInput,
+        description: description,
+        amount: parseFloat(amount),
+      };
+
+      const newCatalogEntry = {
+        id: newServiceId,
+        name: sellInput,
+        description: description,
+        price: parseFloat(amount),
+        unit: 'project',
+        icon: '📝',
+        change: 0,
+        listingType: ['buy', 'sell'],
+      };
+
+      setListedServices(prevServices => [...prevServices, newUsersListedService]);
+      setCatalogServices(prevServices => [...prevServices, newCatalogEntry]);
+
+      // alert(`Service listed!\nName: ${sellInput}\nDescription: ${description}\nAmount: $${amount}`); // Removed as per previous comments
+      setSellInput('');
+      setDescription('');
+      setAmount('');
+    }
+  };
+
+  // --- Modified Function to handle submission for the 'buy' form ---
+  const handlePlaceOrder = () => {
+    if (orderQuantity && selectedService) {
+      // Find the details of the selected service from the STATIC list
+      const purchasedServiceDetails = staticBuyableServices.find(s => s.id === selectedService);
+
+      if (purchasedServiceDetails) {
+        // Create a NEW entry for the catalog based on the ordered service
+        // Give it a unique ID, possibly indicating it's a "bought" instance
+        const newBoughtServiceId = `bought_item_${Date.now()}`;
+        const newCatalogEntry = {
+          id: newBoughtServiceId,
+          name: `${purchasedServiceDetails.name} (Ordered)`, // Indicate it was ordered
+          description: `Ordered: ${purchasedServiceDetails.description} - Quantity: ${orderQuantity}`,
+          price: purchasedServiceDetails.price * parseFloat(orderQuantity), // Total price of the order
+          unit: 'order', // Unit now refers to "an order"
+          icon: '🛒', // A shopping cart icon, for example
+          change: 0, // No change for a newly ordered item
+          listingType: ['buy'], // Maybe only 'buy' if it's a record of your purchase
+        };
+
+        // Add this new entry to the main catalogServices
+        setCatalogServices(prevServices => [...prevServices, newCatalogEntry]);
+
+      
+        setOrderQuantity('1'); // Reset quantity
+      } else {
+        alert('Please select a valid service.');
+      }
+    } else {
+        alert('Please select a service and enter a quantity.');
+    }
+  };
+
+  return (
     <div className="space-y-6">
-      <h2 className="text-2xl font-bold text-gray-800">{type === 'buy' ? 'Purchase Services' : 'Sell Services'}</h2> {/* Changed text color */}
+      <h2 className="text-2xl font-bold text-gray-800">{type === 'sell' ? 'Sell Services' : 'Buy Services'}</h2>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        <div className="bg-white rounded-2xl p-6 border border-gray-200"> {/* Changed background and border */}
-          <h3 className="text-lg font-semibold text-gray-800 mb-4">Service Catalog</h3> {/* Changed text color */}
-          <div className="space-y-3 max-h-96 overflow-y-auto">
-            {itServices.map((service) => (
-              <div key={service.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"> {/* Changed background and hover */}
-                <div className="flex items-center space-x-3">
-                  <div className="text-blue-600">{service.icon}</div> {/* Adjusted color for contrast */}
-                  <div>
-                    <div className="font-semibold text-gray-900">{service.name}</div> {/* Changed text color */}
-                    <div className="text-sm text-gray-600">{service.description}</div> {/* Changed text color */}
+        {/* --- Service Catalog Section --- */}
+        <div className="bg-white rounded-2xl p-6 border border-gray-200">
+          <h3 className="text-lg font-semibold text-gray-800 mb-4">Service Catalog</h3>
+          {catalogLoading ? (
+            <div className="text-center py-8 text-gray-500">Loading services...</div>
+          ) : catalogError ? (
+            <div className="text-center py-8 text-red-500">{catalogError}</div>
+          ) : (
+            <div className="space-y-3 max-h-96 overflow-y-auto">
+              {filteredCatalogServices.length > 0 ? (
+                filteredCatalogServices.map((service) => (
+                  <div key={service.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
+                    <div className="flex items-center space-x-3">
+                      <div className="text-blue-600">{service.icon}</div>
+                      <div>
+                        <div className="font-semibold text-gray-900">{service.name}</div>
+                        <div className="text-sm text-gray-600">{service.description}</div>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <div className="font-semibold text-gray-900">${service.price.toLocaleString()}</div>
+                      <div className="text-xs text-gray-500">per {service.unit}</div>
+                      {service.change !== 0 && (
+                          <div className={`text-sm flex items-center ${service.change >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                              {service.change >= 0 ? <ArrowUpRight className="w-3 h-3 mr-1" /> : <ArrowDownRight className="w-3 h-3 mr-1" />}
+                              {Math.abs(service.change)}%
+                          </div>
+                      )}
+                    </div>
                   </div>
-                </div>
-                <div className="text-right">
-                  <div className="font-semibold text-gray-900">${service.price.toLocaleString()}</div> {/* Changed text color */}
-                  <div className="text-xs text-gray-500">per {service.unit}</div> {/* Changed text color */}
-                  <div className={`text-sm flex items-center ${service.change >= 0 ? 'text-green-600' : 'text-red-600'}`}> {/* Adjusted color for contrast */}
-                    {service.change >= 0 ? <ArrowUpRight className="w-3 h-3 mr-1" /> : <ArrowDownRight className="w-3 h-3 mr-1" />}
-                    {Math.abs(service.change)}%
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
+                ))
+              ) : (
+                <p className="text-gray-600 text-center py-4">No services available for this type.</p>
+              )}
+            </div>
+          )}
         </div>
 
-        <div className="bg-white rounded-2xl p-6 border border-gray-200"> {/* Changed background and border */}
-          <h3 className="text-lg font-semibold text-gray-800 mb-4">{type === 'buy' ? 'Place Order' : 'List Service'}</h3> {/* Changed text color */}
-          <div className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Select Service</label> {/* Changed text color */}
-              <select
-                value={selectedService}
-                onChange={(e) => setSelectedService(e.target.value)}
-                className="w-full bg-gray-100 border border-gray-300 rounded-lg px-4 py-3 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500" // Changed background, border, and text color
+        {/* --- Right Section: List Service / Place Order --- */}
+        <div className="bg-white rounded-2xl p-6 border border-gray-200">
+          <h3 className="text-lg font-semibold text-gray-800 mb-4">{type === 'sell' ? 'Sell Your Service' : 'Buy the service'}</h3>
+
+          {type === 'sell' && (
+            <div className="space-y-6">
+              <form onSubmit={handleSubmitSell} className="space-y-4">
+                <div>
+                  <label htmlFor="sellInput" className="block text-sm font-medium text-gray-700 mb-2">Service Name</label>
+                  <input
+                    type="text"
+                    id="sellInput"
+                    value={sellInput}
+                    onChange={(e) => setSellInput(e.target.value)}
+                    placeholder="e.g., Custom Web Design"
+                    className={`w-full bg-gray-100 border rounded-lg px-4 py-3 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 ${sellFormErrors.sellInput ? 'border-red-500' : 'border-gray-300'}`}
+                  />
+                  {sellFormErrors.sellInput && <p className="text-red-500 text-xs mt-1">{sellFormErrors.sellInput}</p>}
+                </div>
+
+                <div>
+                  <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-2">Description</label>
+                  <textarea
+                    id="description"
+                    value={description}
+                    onChange={(e) => setDescription(e.target.value)}
+                    placeholder="Detailed description of your service"
+                    rows="3"
+                    className={`w-full bg-gray-100 border rounded-lg px-4 py-3 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none ${sellFormErrors.description ? 'border-red-500' : 'border-gray-300'}`}
+                  />
+                  {sellFormErrors.description && <p className="text-red-500 text-xs mt-1">{sellFormErrors.description}</p>}
+                </div>
+
+                <div>
+                  <label htmlFor="amount" className="block text-sm font-medium text-gray-700 mb-2">Amount ($)</label>
+                  <input
+                    type="number"
+                    id="amount"
+                    value={amount}
+                    onChange={(e) => setAmount(e.target.value)}
+                    placeholder="e.g., 500.00"
+                    min="0"
+                    step="0.01"
+                    className={`w-full bg-gray-100 border rounded-lg px-4 py-3 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 ${sellFormErrors.amount ? 'border-red-500' : 'border-gray-300'}`}
+                  />
+                  {sellFormErrors.amount && <p className="text-red-500 text-xs mt-1">{sellFormErrors.amount}</p>}
+                </div>
+
+                <button
+                  type="submit"
+                  className="w-full py-3 rounded-lg font-semibold transition-all duration-300 bg-green-600 hover:bg-green-700 text-white"
+                >
+                  Sell Service
+                </button>
+              </form>
+            </div>
+          )}
+
+         {type === 'buy' && (
+            <div className="space-y-4">
+              <div>
+                <label htmlFor="selectService" className="block text-sm font-medium text-gray-700 mb-2">Select Service</label>
+                <select
+                  id="selectService"
+                  value={selectedService}
+                  onChange={(e) => setSelectedService(e.target.value)}
+                  className="w-full bg-gray-100 border border-gray-300 rounded-lg px-4 py-3 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  {/* Using staticBuyableServices for the options */}
+                  {staticBuyableServices.length > 0 ? (
+                    staticBuyableServices.map((service) => (
+                      <option key={service.id} value={service.id} className="bg-gray-100">
+                        {service.name} - ${service.price}/{service.unit}
+                      </option>
+                    ))
+                  ) : (
+                    <option value="">No services available to buy</option>
+                  )}
+                </select>
+              </div>
+
+
+              <div className="bg-gray-50 rounded-lg p-4">
+                <div className="flex justify-between items-center mb-2">
+                  <span className="text-gray-700">Service:</span>
+                  <span className="text-gray-900 font-medium">
+                    {/* Displaying details from staticBuyableServices for the preview */}
+                    {staticBuyableServices.find(s => s.id === selectedService)?.name || 'Select Service'}
+                  </span>
+                </div>
+                <div className="flex justify-between items-center mb-2">
+                  <span className="text-gray-700">Unit Price:</span>
+                  <span className="text-gray-900 font-medium">
+                    {/* Displaying details from staticBuyableServices for the preview */}
+                    ${staticBuyableServices.find(s => s.id === selectedService)?.price.toLocaleString() || '0.00'}
+                  </span>
+                </div>
+                
+              </div>
+
+              <button
+                onClick={handlePlaceOrder}
+                className="w-full py-3 rounded-lg font-semibold transition-all duration-300 bg-blue-600 hover:bg-blue-700 text-white"
               >
-                {itServices.map((service) => (
-                  <option key={service.id} value={service.id} className="bg-gray-100"> {/* Changed background */}
-                    {service.name} - ${service.price}/{service.unit}
-                  </option>
-                ))}
-              </select>
+                Place Order
+              </button>
             </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2"> {/* Changed text color */}
-                Quantity ({itServices.find(s => s.id === selectedService)?.unit || 'units'})
-              </label>
-              <input
-                type="number"
-                value={orderQuantity}
-                onChange={(e) => setOrderQuantity(e.target.value)}
-                placeholder="Enter quantity"
-                min="1"
-                className="w-full bg-gray-100 border border-gray-300 rounded-lg px-4 py-3 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500" // Changed background, border, and text color
-              />
-            </div>
-
-            <div className="bg-gray-50 rounded-lg p-4"> {/* Changed background */}
-              <div className="flex justify-between items-center mb-2">
-                <span className="text-gray-700">Service:</span> {/* Changed text color */}
-                <span className="text-gray-900 font-medium"> {/* Changed text color */}
-                  {itServices.find(s => s.id === selectedService)?.name || 'Select Service'}
-                </span>
-              </div>
-              <div className="flex justify-between items-center mb-2">
-                <span className="text-gray-700">Unit Price:</span> {/* Changed text color */}
-                <span className="text-gray-900 font-medium"> {/* Changed text color */}
-                  ${itServices.find(s => s.id === selectedService)?.price.toLocaleString() || '0.00'}
-                </span>
-              </div>
-              <div className="flex justify-between items-center border-t border-gray-200 pt-2"> {/* Changed border */}
-                <span className="text-gray-700">Total Cost:</span> {/* Changed text color */}
-                <span className="text-xl font-bold text-gray-900"> {/* Changed text color */}
-                  ${orderQuantity && selectedService ? (
-                    parseFloat(orderQuantity) * (itServices.find(s => s.id === selectedService)?.price || 0)
-                  ).toLocaleString() : '0.00'}
-                </span>
-              </div>
-            </div>
-
-            <button
-              onClick={() => {
-                if (orderQuantity && selectedService) {
-                  const service = itServices.find(s => s.id === selectedService);
-                  alert(`${type === 'buy' ? 'Order placed' : 'Service listed'} for ${orderQuantity} ${service?.unit}(s) of ${service?.name}`);
-                  setOrderQuantity('');
-                }
-              }}
-              className={`w-full py-3 rounded-lg font-semibold transition-all duration-300 ${type === 'buy'
-                ? 'bg-green-600 hover:bg-green-700 text-white'
-                : 'bg-blue-600 hover:bg-blue-700 text-white'
-                }`}
-            >
-              {type === 'buy' ? 'Place Order' : 'List Service'}
-            </button>
-          </div>
+          )}
         </div>
       </div>
+
+      {/* --- Section for User's Listed Services --- */}
+      {/* {type === 'sell' && listedServices.length > 0 && (
+        <div className="mt-8 bg-white rounded-2xl p-6 border border-gray-200">
+          <h3 className="text-lg font-semibold text-gray-800 mb-4">Your Currently Listed Services</h3>
+          <div className="overflow-x-auto">
+            <table className="min-w-full divide-y divide-gray-200">
+              <thead className="bg-gray-50">
+                <tr>
+                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Service Name
+                  </th>
+                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Description
+                  </th>
+                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Asking Amount
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="bg-white divide-y divide-gray-200">
+                {listedServices.map((service) => (
+                  <tr key={service.id}>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                      {service.sellInput}
+                    </td>
+                    <td className="px-6 py-4 whitespace-normal text-sm text-gray-500">
+                      {service.description}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      ${service.amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )} */}
     </div>
   );
+};
+
 
   const OrderHistorySection = () => (
     <div className="space-y-6">
-      <h2 className="text-2xl font-bold text-gray-800">Order History</h2> {/* Changed text color */}
+      <h2 className="text-2xl font-bold text-gray-800">Transaction History</h2> {/* Changed text color */}
 
       <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden"> {/* Changed background and border */}
         <div className="overflow-x-auto">
@@ -351,7 +587,7 @@ const Dashboard = ({ username }) => {
                       : 'bg-blue-100 text-blue-700' // Adjusted color for contrast
                       }`}>
                       {order.type === 'buy' ? <ShoppingCart className="w-3 h-3 mr-1" /> : <DollarSign className="w-3 h-3 mr-1" />}
-                      {order.type === 'buy' ? 'PURCHASE' : 'SALE'}
+                      {order.type === 'buy' ? 'BUY' : 'SALE'}
                     </span>
                   </td>
                   <td className="px-6 py-4 text-sm font-medium text-gray-900"> {/* Changed text color */}
@@ -636,7 +872,7 @@ const Dashboard = ({ username }) => {
             <NavigationItem
               id="buy"
               icon={<ShoppingCart className="w-5 h-5" />}
-              label="Purchase Services"
+              label="Buy Services"
               isActive={activeSection === 'buy'}
               onClick={setActiveSection}
             />
@@ -650,7 +886,7 @@ const Dashboard = ({ username }) => {
             <NavigationItem
               id="history"
               icon={<History className="w-5 h-5" />}
-              label="Order History"
+              label="Transaction History"
               isActive={activeSection === 'history'}
               onClick={setActiveSection}
             />
@@ -747,7 +983,7 @@ const Dashboard = ({ username }) => {
               <NavigationItem
                 id="buy"
                 icon={<ShoppingCart className="w-5 h-5" />}
-                label="Purchase Services"
+                label="Buy Services"
                 isActive={activeSection === 'buy'}
                 onClick={(id) => {
                   setActiveSection(id);
@@ -767,7 +1003,7 @@ const Dashboard = ({ username }) => {
               <NavigationItem
                 id="history"
                 icon={<History className="w-5 h-5" />}
-                label="Order History"
+                label="Transaction History"
                 isActive={activeSection === 'history'}
                 onClick={(id) => {
                   setActiveSection(id);
