@@ -11,6 +11,37 @@ import { keycloak } from '../keycloak.ts';
 
 const Dashboard = ({ username }) => {
 const [groupName, setGroupName] = useState(null); // Initialize as null or empty string
+const userName = localStorage.getItem('name');
+ const fetchUsers = async () => {
+    try {
+     
+      const response = await fetch(`http://localhost:3010/api/v1/getUserByName/${userName}`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const data = await response.json();
+      console.log("USerDADADADADADAD", data);
+
+      localStorage.setItem('public_key', data?.wallet?.public_key);
+      localStorage.setItem('Private_key', data?.wallet?.secret_key);
+
+    } catch (error) {
+      console.error('Error fetching users:', error);
+    } finally {
+    }
+  };
+
+  // Fetch users when the component mounts
+  useEffect(() => {
+    fetchUsers();
+  }, []);
 
   // --- Effect to load groupName from localStorage once on component mount ---
    useEffect(() => {

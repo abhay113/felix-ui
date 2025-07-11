@@ -9,11 +9,12 @@ const App = ({ keycloak }: { keycloak: any }) => {
   const navigate = useNavigate();
   const location = useLocation();
 
-  console.log("keycloak?.tokenParsedkeycloak?.tokenParsed", keycloak?.tokenParsed);
+  console.log("keycloak?.tokenParsedkeycloak?.tokenParsed", keycloak);
 
 
   const username = keycloak?.tokenParsed?.given_name;
   console.log("usernameusernameusername", username);
+  localStorage.setItem('token', keycloak.token);
   const group = keycloak?.tokenParsed?.group
  if (group && Array.isArray(group)) {
     try {
