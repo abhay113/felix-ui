@@ -1130,7 +1130,7 @@ const UserManagementSection = () => {
                     <td className="px-6 py-4 text-sm font-medium text-gray-900">{user.username}</td>
                     <td className="px-6 py-4 text-sm font-medium text-gray-900">{user.email}</td>
                     <td className="px-6 py-4 text-sm text-gray-700">{user?.walletData?.balance}</td>
-                    <td className="px-6 py-4 text-sm text-gray-700">{user?.walletData?.id}</td>
+                    <td className="px-6 py-4 text-sm text-gray-700">{user?.walletData?.public_key}</td>
                     <td className="px-6 py-4 text-sm text-gray-700">
                       <button
                         onClick={() => handleIssueClick(user)}
