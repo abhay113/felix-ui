@@ -9,7 +9,14 @@ const App = ({ keycloak }: { keycloak: any }) => {
   const navigate = useNavigate();
   const location = useLocation();
 
+  console.log("keycloak?.tokenParsedkeycloak?.tokenParsed",keycloak?.tokenParsed);
+  
+
   const username = keycloak?.tokenParsed?.given_name;
+  console.log("usernameusernameusername",username);
+  
+   localStorage.setItem('userId', keycloak?.tokenParsed?.sub);
+    localStorage.setItem('name', keycloak?.tokenParsed?.preferred_username);
 
   useEffect(() => {
     const publicPaths = ['/login', '/signup'];
