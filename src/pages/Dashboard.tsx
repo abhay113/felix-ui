@@ -10,7 +10,18 @@ import { keycloak } from '../keycloak.ts';
 
 
 const Dashboard = ({ username }) => {
+const [groupName, setGroupName] = useState(null); // Initialize as null or empty string
 
+  // --- Effect to load groupName from localStorage once on component mount ---
+   useEffect(() => {
+    const storedGroupName = localStorage.getItem('groupName');
+    if (storedGroupName) {
+      setGroupName(storedGroupName);
+      console.log('Primary group name retrieved from localStorage and set to state:', storedGroupName);
+    } else {
+      console.log('No primary group name found in localStorage on mount.');
+    }
+  }, []);
   console.log("usernameusernameusernameusername", username);
 
   const mockUser = {
@@ -879,10 +890,77 @@ const Dashboard = ({ username }) => {
   );
 };
 
+const IssueDialog = ({ onClose, onSubmitIssue, userName ,onAmmoutAdded}) => {
+  const [amount, setAmount] = useState('');
+  const [comment, setComment] = useState('');
+
+  const handleSubmit = () => {
+    if (amount && comment) {
+      onSubmitIssue({ amount: parseFloat(amount), comment });
+      onAmmoutAdded()
+      onClose();
+    } else {
+      alert('Please enter both amount and comment.');
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center p-4">
+      <div className="bg-white rounded-lg p-6 shadow-xl w-full max-w-md">
+        <h3 className="text-xl font-semibold mb-4">Issue Bluedoller</h3>
+        <div className="space-y-4">
+          <div>
+            <label htmlFor="amount" className="block text-sm font-medium text-gray-700 mb-1">
+              Amount
+            </label>
+            <input
+              type="number"
+              id="amount"
+              value={amount}
+              onChange={(e) => setAmount(e.target.value)}
+              className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+              placeholder="Enter amount"
+            />
+          </div>
+          <div>
+            <label htmlFor="comment" className="block text-sm font-medium text-gray-700 mb-1">
+              Comment
+            </label>
+            <textarea
+              id="comment"
+              value={comment}
+              onChange={(e) => setComment(e.target.value)}
+              rows="3"
+              className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+              placeholder="Add a comment"
+            ></textarea>
+          </div>
+        </div>
+        <div className="mt-6 flex justify-end space-x-3">
+          <button
+            onClick={onClose}
+            className="px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300 transition-colors"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={handleSubmit}
+            className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 rounded-lg transition-colors duration-300"
+          >
+            Issue
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 // UserManagementSection Component
 const UserManagementSection = () => {
+   const [isAddUserDialogOpen, setIsAddUserDialogOpen] = useState(false);
+  const [isIssueDialogOpen, setIsIssueDialogOpen] = useState(false);
+  const [selectedUser, setSelectedUser] = useState(null);
   const [users, setUsers] = useState([]);
-  const [isAddUserDialogOpen, setIsAddUserDialogOpen] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -924,6 +1002,53 @@ const UserManagementSection = () => {
     fetchUsers(); // Re-fetch the user list to update the table
   };
 
+   const handleIssueClick = (user) => {
+    setSelectedUser(user);
+    setIsIssueDialogOpen(true);
+  };
+
+ const handleSubmitIssue = async ({ amount, comment }) => {
+  // Ensure selectedUser is available before trying to access its properties
+  if (selectedUser && selectedUser.walletData) {
+    const public_key = selectedUser.walletData.public_key;
+    console.log(`Issuing ${amount} to ${selectedUser.username} (Wallet ID: ${public_key}) with comment: "${comment}"`);
+
+    const payload = {
+      receiverPublicKey:public_key,
+      amount: String(amount),
+      memo:comment,
+      walletId:selectedUser.walletData.id
+    }
+
+    console.log("payloadpayloadpayload",payload);
+    
+     try {
+
+    const response = await fetch('http://localhost:3010/api/v1/bluedollar/issue', { // Changed from /api/v1/create to /api/v1/issue
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(payload), // Changed userPayload to payload
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({ message: 'No error message provided' }));
+      throw new Error(`HTTP error! status: ${response.status} - ${errorData.message || response.statusText}`);
+    }
+
+    const data = await response.json();
+    console.log("Issue Funds API Response:", JSON.stringify(data, null, 2)); // Changed log message
+  } catch (error) {
+    console.error("Error issuing funds:", error); // Changed error message
+    alert(`Failed to issue funds: ${error.message}`);
+  }
+
+  } else {
+    console.error("Error: selectedUser or selectedUser.walletData is not available.");
+  }
+};
+
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
@@ -942,38 +1067,48 @@ const UserManagementSection = () => {
           <table className="w-full">
             <thead className="bg-gray-100">
               <tr>
-                <th className="px-6 py-4 text-left text-sm font-medium text-gray-700">User ID</th>
                 <th className="px-6 py-4 text-left text-sm font-medium text-gray-700">User Name</th>
                 <th className="px-6 py-4 text-left text-sm font-medium text-gray-700">Email</th>
-                <th className="px-6 py-4 text-left text-sm font-medium text-gray-700">Created At</th>
+                <th className="px-6 py-4 text-left text-sm font-medium text-gray-700">Wallet balance</th>
+                <th className="px-6 py-4 text-left text-sm font-medium text-gray-700">Wallet id</th>
+                <th className="px-6 py-4 text-left text-sm font-medium text-gray-700">Actions</th> {/* New column for actions */}
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200">
               {loading ? (
                 <tr>
-                  <td colSpan="4" className="px-6 py-4 text-center text-sm text-gray-500">
+                  <td colSpan="5" className="px-6 py-4 text-center text-sm text-gray-500">
                     Loading users...
                   </td>
                 </tr>
               ) : error ? (
                 <tr>
-                  <td colSpan="4" className="px-6 py-4 text-center text-sm text-red-500">
+                  <td colSpan="5" className="px-6 py-4 text-center text-sm text-red-500">
                     {error}
                   </td>
                 </tr>
               ) : users.length === 0 ? (
                 <tr>
-                  <td colSpan="4" className="px-6 py-4 text-center text-sm text-gray-500">
+                  <td colSpan="5" className="px-6 py-4 text-center text-sm text-gray-500">
                     No users found.
                   </td>
                 </tr>
               ) : (
                 users.map((user) => (
                   <tr key={user.id} className="hover:bg-gray-50 transition-colors">
-                    <td className="px-6 py-4 text-sm font-medium text-gray-900">{user.id}</td>
                     <td className="px-6 py-4 text-sm font-medium text-gray-900">{user.username}</td>
-                    <td className="px-6 py-4 text-sm text-gray-700">{user.email}</td>
-                    <td className="px-6 py-4 text-sm text-gray-700">{user.created_at}</td>
+                    <td className="px-6 py-4 text-sm font-medium text-gray-900">{user.email}</td>
+                    <td className="px-6 py-4 text-sm text-gray-700">{user?.walletData?.balance}</td>
+                    <td className="px-6 py-4 text-sm text-gray-700">{user?.walletData?.id}</td>
+                    <td className="px-6 py-4 text-sm text-gray-700">
+                      <button
+                        onClick={() => handleIssueClick(user)}
+                        className="
+                        bg-blue-600 hover:bg-blue-700 text-white font-semibold py-1 px-3 rounded-lg transition-colors duration-300"
+                      >
+                        Issue
+                      </button>
+                    </td>
                   </tr>
                 ))
               )}
@@ -985,7 +1120,16 @@ const UserManagementSection = () => {
       {isAddUserDialogOpen && (
         <AddUserDialog
           onClose={() => setIsAddUserDialogOpen(false)}
-          onUserAdded={handleUserAdded} // Pass the handler
+          onUserAdded={handleUserAdded}
+        />
+      )}
+
+      {isIssueDialogOpen && selectedUser && (
+        <IssueDialog
+          onClose={() => setIsIssueDialogOpen(false)}
+          onSubmitIssue={handleSubmitIssue}
+          userName={selectedUser.username}
+           onAmmoutAdded={handleUserAdded}
         />
       )}
     </div>
@@ -1143,13 +1287,15 @@ const UserManagementSection = () => {
               isActive={activeSection === 'history'}
               onClick={setActiveSection}
             />
-            <NavigationItem
-              id="users" // New Navigation Item for Users
-              icon={<Users className="w-5 h-5" />}
-              label="Users"
-              isActive={activeSection === 'users'}
-              onClick={setActiveSection}
-            />
+             {groupName === 'admin' && (
+              <NavigationItem
+                id="users" // New Navigation Item for Users
+                icon={<Users className="w-5 h-5" />}
+                label="Users"
+                isActive={activeSection === 'users'}
+                onClick={setActiveSection}
+              />
+            )}
           </nav>
 
           <div className="mt-8 p-4 bg-blue-50 rounded-2xl border border-blue-200"> {/* Changed background and border */}
