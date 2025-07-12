@@ -596,7 +596,7 @@ const Dashboard = ({ username }) => {
           <div>
             {type === 'sell' && (
               <>
-                <div className="space-y-6 rounded-2xl border border-gray-300" style={{ width: '68rem', marginLeft: '15rem', padding: "2rem" }}>
+                <div className="space-y-6 rounded-2xl border border-gray-300" style={{ width: '68rem',margin: 'auto', padding: "2rem" }}>
                   <div className="space-y-4">
                     <div>
                       <label htmlFor="sellInput" className="block text-sm font-medium text-gray-700 mb-2">Service Name</label>
