@@ -9,7 +9,7 @@ const App = ({ keycloak }: { keycloak: any }) => {
   const navigate = useNavigate();
   const location = useLocation();
 
-  console.log("keycloak?.tokenParsedkeycloak?.tokenParsed", keycloak);
+  console.log("keycloak?.tokenParsedkeycloak?.tokenParsed", keycloak.tokenParsed);
 
 
   const username = keycloak?.tokenParsed?.given_name;
