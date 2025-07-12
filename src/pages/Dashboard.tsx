@@ -15,7 +15,7 @@ const userName = localStorage.getItem('name');
  const fetchUsers = async () => {
     try {
      
-      const response = await fetch(`http://localhost:3010/api/v1/getUserByName/${userName}`, {
+      const response = await fetch(`http://localhost:3010/api/v1/getUser/${userName}`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
@@ -999,7 +999,7 @@ const UserManagementSection = () => {
     try {
       setLoading(true);
       setError(null);
-      const response = await fetch(`http://localhost:3010/api/v1/getUser`, {
+      const response = await fetch(`http://localhost:3010/api/v1/getAllUsers`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
