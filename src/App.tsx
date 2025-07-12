@@ -35,7 +35,7 @@ const App = ({ keycloak }: { keycloak: any }) => {
     console.warn('Group not found or not an array in keycloak.tokenParsed');
   }
   
-  localStorage.setItem('userId', keycloak?.tokenParsed?.sub);
+  localStorage.setItem('kc_userId', keycloak?.tokenParsed?.sub);
   localStorage.setItem('name', keycloak?.tokenParsed?.preferred_username);
 
   useEffect(() => {

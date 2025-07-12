@@ -6,6 +6,9 @@ import {
   Cloud, Database, Code, Smartphone, UserPlus, CheckCircle, XCircle,
   MoreVertical
 } from 'lucide-react';
+import { toast, ToastContainer } from 'react-toastify';
+import 'react-toastify/ReactToastify.css';
+import { Loader2 } from 'lucide-react';
 import { keycloak } from '../keycloak.ts';
 
 
@@ -14,11 +17,12 @@ const Dashboard = ({ username }) => {
   const userName = localStorage.getItem('name');
   const fetchUsers = async () => {
     try {
-     
+
       const response = await fetch(`http://localhost:3010/api/v1/getUser/${userName}`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}` // Add token here
         },
       });
 
@@ -30,7 +34,9 @@ const Dashboard = ({ username }) => {
       console.log("USerDADADADADADAD", data);
 
       localStorage.setItem('public_key', data?.wallet?.public_key);
-      localStorage.setItem('Private_key', data?.wallet?.secret_key);
+      localStorage.setItem('private_key', data?.wallet?.secret_key);
+      localStorage.setItem('userId', data?.id);
+
 
     } catch (error) {
       console.error('Error fetching users:', error);
@@ -223,6 +229,7 @@ const Dashboard = ({ username }) => {
           method: 'GET',
           headers: {
             'Content-Type': 'application/json',
+            'Authorization': `Bearer ${localStorage.getItem('token')}` // Add token here
           },
         });
 
@@ -310,602 +317,567 @@ const Dashboard = ({ username }) => {
 
   // staticBuyableServices: This will be used for the 'Buy' dropdown AND added to the catalo
 
-const ServiceSection = ({ type }) => {
-  const staticBuyableServices = [
-    { id: 'static_web_dev', name: 'Static Web Dev Package', description: 'A basic website', price: 999, unit: 'package', icon: '📦', change: 0, listingType: ['buy', 'sell'] },
-    { id: 'static_mobile_basic', name: 'Basic Mobile App', description: 'Simple cross-platform app', price: 2500, unit: 'app', icon: '📱', change: 0, listingType: ['buy', 'sell'] },
-    { id: 'static_cloud_starter', name: 'Cloud Starter Pack', description: 'Initial cloud setup', price: 400, unit: 'setup', icon: '☁️', change: 0, listingType: ['buy', 'sell'] },
-    { id: 'static_data_report', name: 'Data Insights Report', description: 'Monthly data report', price: 150, unit: 'report', icon: '📈', change: 0, listingType: ['buy', 'sell'] },
-  ];
+  const ServiceSection = ({ type }) => {
+    const staticBuyableServices = [
+      { id: 'static_web_dev', name: 'Static Web Dev Package', description: 'A basic website', price: 999, unit: 'package', icon: '📦', change: 0, listingType: ['buy', 'sell'] },
+      { id: 'static_mobile_basic', name: 'Basic Mobile App', description: 'Simple cross-platform app', price: 2500, unit: 'app', icon: '📱', change: 0, listingType: ['buy', 'sell'] },
+      { id: 'static_cloud_starter', name: 'Cloud Starter Pack', description: 'Initial cloud setup', price: 400, unit: 'setup', icon: '☁️', change: 0, listingType: ['buy', 'sell'] },
+      { id: 'static_data_report', name: 'Data Insights Report', description: 'Monthly data report', price: 150, unit: 'report', icon: '📈', change: 0, listingType: ['buy', 'sell'] },
+    ];
 
-  const [servicesForSale] = useState([
-    {
-      id: 'srvc001',
-      name: 'Premium Account',
-      description: 'Unlock all premium features, ad-free experience, and priority support.',
-      amount: 19.99,
-    },
-    {
-      id: 'srvc002',
-      name: 'Extra Storage (100GB)',
-      description: 'Add 100GB of secure cloud storage to your account.',
-      amount: 5.00,
-    },
-    {
-      id: 'srvc003',
-      name: 'Custom Domain Integration',
-      description: 'Connect your own custom domain to your profile or project.',
-      amount: 10.00,
-    },
-    {
-      id: 'srvc004',
-      name: 'Analytics Dashboard Pro',
-      description: 'Advanced analytics and reporting tools for detailed insights.',
-      amount: 29.99,
-    },
-    {
-      id: 'srvc005',
-      name: '24/7 Priority Support',
-      description: 'Access to dedicated support staff around the clock.',
-      amount: 15.00,
-    },
-  ]);
+    // State for all services in the main catalog (for 'buy' section)
+    const [servicesForSale, setCatalogServices] = useState([]);
+    // isLoading controls the loader for the actual API calls (sell and confirmed buy)
+    const [isLoading, setIsLoading] = useState(false);
 
-  // State for all services in the main catalog
-  const [catalogServices, setCatalogServices] = useState([]);
-  const [catalogLoading, setCatalogLoading] = useState(true);
-  const [catalogError, setCatalogError] = useState(null);
+    // State for 'sell' form to list a user's service
+    const [sellInput, setSellInput] = useState('');
+    const [description, setDescription] = useState('');
+    const [amount, setAmount] = useState('');
+    const [sellFormErrors, setSellFormErrors] = useState({});
 
-  // State for 'sell' form to list a user's service
-  const [sellInput, setSellInput] = useState('');
-  const [description, setDescription] = useState('');
-  const [amount, setAmount] = useState('');
-  const [sellFormErrors, setSellFormErrors] = useState({});
-  
-  // State to store services that have been listed for sale by the user
-  const [listedServices, setListedServices] = useState([]);
-  const [selectedUser, setSelectedUser] = useState(null);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
+    // State to store services that have been listed for sale by the user (not directly used in provided JSX)
+    const [listedServices, setListedServices] = useState([]);
+    const [selectedUser, setSelectedUser] = useState(null); // Used to store service selected for buying
+    const [loading, setLoading] = useState(false); // Used for initial fetch of services in 'buy' section
+    const [error, setError] = useState(null);
+    const [loadingServiceId, setLoadingServiceId] = useState(null); // Not directly used with current loader strategy, but can be useful for per-item loaders
+    const [showConfirmDialog, setShowConfirmDialog] = useState(false); // Controls visibility of confirmation dialog
+    const [pendingService, setPendingService] = useState(null); // Stores the service data for the confirmation dialog
 
-  // State for 'buy' form
-  const [selectedService, setSelectedService] = useState('');
-  const [orderQuantity, setOrderQuantity] = useState('1');
+    // Effect to simulate fetching services and populate 'catalogServices'
+    useEffect(() => {
+      const userId = localStorage.getItem("userId")
+      const fetchUsers = async () => {
+        try {
+          setLoading(true); // Start loading for initial data fetch
+          setError(null);
+          const response = await fetch(`http://localhost:3010/api/v1/offers?userId=${userId}`, {
+            method: 'GET',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${localStorage.getItem('token')}` // Add token here
+            },
+          });
 
-  // Effect to simulate fetching services and populate 'catalogServices'
-  useEffect(() => {
-    const fetchServices = async () => {
-      setCatalogLoading(true);
-      setCatalogError(null);
-      try {
-        await new Promise(resolve => setTimeout(resolve, 800));
+          if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+          }
 
-        // Initialize catalogServices with staticBuyableServices
-        setCatalogServices([...staticBuyableServices]);
+          const data = await response.json();
+          console.log("userIduserId", data);
 
-        // Set default selected service for 'buy' dropdown from static data
-        setSelectedService(staticBuyableServices[0]?.id || '');
+          setCatalogServices(data.offers || []);
 
-      } catch (error) {
-        setCatalogError('Failed to load services. Please try again.');
-        console.error('Error fetching catalog services:', error);
-      } finally {
-        setCatalogLoading(false);
-      }
+        } catch (error) {
+          console.error('Error fetching users:', error);
+          setError(`Failed to load users. Please try again later.`);
+        } finally {
+          setLoading(false); // Stop loading for initial data fetch
+        }
+      };
+
+      fetchUsers();
+    }, []);
+
+    // Function to handle submission for the 'sell' form (user listing)
+    const handleSubmitSell = async () => {
+  setSellFormErrors({});
+
+  let newErrors = {};
+  let isValid = true;
+
+  if (!sellInput.trim()) {
+    newErrors.sellInput = 'Service name is required.';
+    isValid = false;
+  }
+  if (!description.trim()) {
+    newErrors.description = 'Description is required.';
+    isValid = false;
+  }
+  if (!amount || parseFloat(amount) <= 0) {
+    newErrors.amount = 'Amount must be a positive number.';
+    isValid = false;
+  }
+
+  setSellFormErrors(newErrors);
+
+  if (isValid) {
+    setIsLoading(true); // Start loader for sell operation
+
+    const newUsersListedService = {
+      seller_id: localStorage.getItem("userId"),
+      service_name: sellInput,
+      desc: description,
+      amount: String(amount),
+      memon: description, // Typo: 'memon' should likely be 'memo'
+      price: '1', // Hardcoded price, consider if this should be dynamic
+      created_by: localStorage.getItem("name"),
+      secretKey: localStorage.getItem("private_key"),
     };
 
-    fetchServices();
-  }, []);
+    try {
+      const response = await fetch('http://localhost:3010/api/v1/offers/sell', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}` // Add token here
+        },
+        body: JSON.stringify(newUsersListedService),
+      });
 
-  // Filter catalog services based on the 'type' prop for the main display
-  const filteredCatalogServices = catalogServices.filter(service => service.listingType?.includes(type));
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({
+          message: 'No error message provided'
+        }));
+        throw new Error(`HTTP error! status: ${response.status} - ${errorData.message || response.statusText}`);
+      }
 
-  // Function to handle submission for the 'sell' form (user listing)
-  const handleSubmitSell = () => {
-    setSellFormErrors({});
+      const data = await response.json();
+      console.log("Service Listing API Response:", JSON.stringify(data, null, 2));
 
-    let newErrors = {};
-    let isValid = true;
+      // 🥳 Add this line for success toast!
+      toast.success("Service created successfully!");
 
-    if (!sellInput.trim()) {
-      newErrors.sellInput = 'Service name is required.';
-      isValid = false;
-    }
-    if (!description.trim()) {
-      newErrors.description = 'Description is required.';
-      isValid = false;
-    }
-    if (!amount || parseFloat(amount) <= 0) {
-      newErrors.amount = 'Amount must be a positive number.';
-      isValid = false;
-    }
-
-    setSellFormErrors(newErrors);
-
-    if (isValid) {
-      const newServiceId = `user_listed_${Date.now()}`;
-
-      const newUsersListedService = {
-        id: newServiceId,
-        name: sellInput,
-        description: description,
-        amount: parseFloat(amount),
-      };
-
-      const newCatalogEntry = {
-        id: newServiceId,
-        name: sellInput,
-        description: description,
-        price: parseFloat(amount),
-        unit: 'project',
-        icon: '📝',
-        change: 0,
-        listingType: ['buy', 'sell'],
-      };
-
-      setListedServices(prev => [...prev, newUsersListedService]);
-      setCatalogServices(prev => [...prev, newCatalogEntry]);
-
-      // Clear form
+    } catch (error) {
+      console.error("Error listing service:", error);
+      alert(`Failed to list service: ${error.message}`);
+      // Optionally, you can also show an error toast here
+      toast.error(`Failed to list service: ${error.message}`);
+    } finally {
+      setIsLoading(false); // Stop loader for sell operation
       setSellInput('');
       setDescription('');
       setAmount('');
     }
-  };
+  }
+};
 
-  const handleBuyClick = (service) => {
-    setSelectedUser(service);
-    // Add your buy logic here
-    console.log('Buying service:', service);
-  };
+    // ConfirmationDialog component (moved inside ServiceSection for simplicity, or can be external)
+    const ConfirmationDialog = ({ isOpen, onConfirm, onCancel, service, isLoading = false }) => {
+      if (!isOpen) return null;
 
-  return (
-    <div className="space-y-6">
-      <h2 className="text-2xl font-bold text-gray-800">{type === 'sell' ? 'Sell Services' : 'Buy Services'}</h2>
-
-      {/* Conditionally apply grid columns based on 'type' */}
-      <div className={`grid gap-8 ${type === 'sell' ? 'grid-cols-1' : 'grid-cols-1'}`}>
-        {/* Service Catalog Section - Only show for 'sell' type */}
-        {/* {type === 'sell' && (
-          <div className="bg-white rounded-2xl p-6 border border-gray-200">
-            <h3 className="text-lg font-semibold text-gray-800 mb-4">Service Catalog</h3>
-            {catalogLoading ? (
-              <div className="text-center py-8 text-gray-500">Loading services...</div>
-            ) : catalogError ? (
-              <div className="text-center py-8 text-red-500">{catalogError}</div>
-            ) : (
-              <div className="space-y-3 max-h-96 overflow-y-auto">
-                {filteredCatalogServices.length > 0 ? (
-                  filteredCatalogServices.map((service) => (
-                    <div key={service.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
-                      <div className="flex items-center space-x-3">
-                        <div className="text-blue-600">{service.icon}</div>
-                        <div>
-                          <div className="font-semibold text-gray-900">{service.name}</div>
-                          <div className="text-sm text-gray-600">{service.description}</div>
-                        </div>
-                      </div>
-                      <div className="text-right">
-                        <div className="font-semibold text-gray-900">${service.price.toLocaleString()}</div>
-                        <div className="text-xs text-gray-500">per {service.unit}</div>
-                        {service.change !== 0 && (
-                          <div className={`text-sm flex items-center ${service.change >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                            {service.change >= 0 ? <ArrowUpRight className="w-3 h-3 mr-1" /> : <ArrowDownRight className="w-3 h-3 mr-1" />}
-                            {Math.abs(service.change)}%
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  ))
+      return (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4 shadow-xl">
+            <h2 className="text-xl font-bold text-gray-800 mb-4">Buy Services</h2>
+            <p className="text-gray-600 mb-6">
+              Are you sure you want to buy "<span className="font-semibold">{service?.service_name}</span>" for ${service?.amount}?
+            </p>
+            <div className="flex justify-end space-x-3">
+              <button
+                onClick={onCancel}
+                disabled={isLoading}
+                className={`px-4 py-2 rounded transition-colors ${isLoading
+                  ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                  : 'bg-gray-300 text-gray-700 hover:bg-gray-400'
+                  }`}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={onConfirm}
+                disabled={isLoading} // Button disabled when the purchase is processing
+                className={`px-4 py-2 rounded transition-colors flex items-center space-x-2 ${isLoading
+                  ? 'bg-blue-400 cursor-not-allowed' // Lighter blue when loading
+                  : 'bg-blue-600 hover:bg-blue-700'
+                  } text-white`}
+              >
+                {isLoading ? ( // Show loader and "Processing..." when loading
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    <span>Processing...</span>
+                  </>
                 ) : (
-                  <p className="text-gray-600 text-center py-4">No services available for this type.</p>
+                  <span>Confirm Purchase</span>
                 )}
-              </div>
-            )}
-          </div>
-        )} */}
-
-        {/* Right Section: List Service / Place Order */}
-        <div>
-          {type === 'sell' && (
-            <>
-              <div className="space-y-6 rounded-2xl  border border-gray-300" style={{ width: '68rem', marginLeft:'15rem', padding:"2rem"}}>
-                <div className="space-y-4">
-                  <div>
-                    <label htmlFor="sellInput" className="block text-sm font-medium text-gray-700 mb-2">Service Name</label>
-                    <input
-                      type="text"
-                      id="sellInput"
-                      value={sellInput}
-                      onChange={(e) => setSellInput(e.target.value)}
-                      placeholder="e.g., Custom Web Design"
-                      className={`w-full bg-gray-100 border rounded-lg px-4 py-3 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 ${sellFormErrors.sellInput ? 'border-red-500' : 'border-gray-300'}`}
-                    />
-                    {sellFormErrors.sellInput && <p className="text-red-500 text-xs mt-1">{sellFormErrors.sellInput}</p>}
-                  </div>
-
-                  <div>
-                    <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-2">Description</label>
-                    <textarea
-                      id="description"
-                      value={description}
-                      onChange={(e) => setDescription(e.target.value)}
-                      placeholder="Detailed description of your service"
-                      rows="3"
-                      className={`w-full bg-gray-100 border rounded-lg px-4 py-3 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none ${sellFormErrors.description ? 'border-red-500' : 'border-gray-300'}`}
-                    />
-                    {sellFormErrors.description && <p className="text-red-500 text-xs mt-1">{sellFormErrors.description}</p>}
-                  </div>
-
-                  <div>
-                    <label htmlFor="amount" className="block text-sm font-medium text-gray-700 mb-2">Amount ($)</label>
-                    <input
-                      type="number"
-                      id="amount"
-                      value={amount}
-                      onChange={(e) => setAmount(e.target.value)}
-                      placeholder="e.g., 500.00"
-                      min="0"
-                      step="0.01"
-                      className={`w-full bg-gray-100 border rounded-lg px-4 py-3 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 ${sellFormErrors.amount ? 'border-red-500' : 'border-gray-300'}`}
-                    />
-                    {sellFormErrors.amount && <p className="text-red-500 text-xs mt-1">{sellFormErrors.amount}</p>}
-                  </div>
-
-                  <button
-                    type="button"
-                    onClick={handleSubmitSell}
-                    className="w-full py-3 rounded-lg font-semibold transition-all duration-300 bg-green-600 hover:bg-green-700 text-white"
-                  >
-                    Sell Service
-                  </button>
-                </div>
-              </div>
-            </>
-          )}
-
-          {type === 'buy' && (
-            <>
-              <h3 className="text-lg font-semibold text-gray-800 mb-4">Available Services</h3>
-              <div className="space-y-6">
-                <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
-                  <div className="overflow-x-auto">
-                    <table className="w-full">
-                      <thead className="bg-gray-100">
-                        <tr>
-                          <th className="px-6 py-4 text-left text-sm font-medium text-gray-700">Service Name</th>
-                          <th className="px-6 py-4 text-left text-sm font-medium text-gray-700">Description</th>
-                          <th className="px-6 py-4 text-left text-sm font-medium text-gray-700">Amount</th>
-                          <th className="px-6 py-4 text-left text-sm font-medium text-gray-700">Actions</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-gray-200">
-                        {loading ? (
-                          <tr>
-                            <td colSpan="4" className="px-6 py-4 text-center text-sm text-gray-500">
-                              Loading services...
-                            </td>
-                          </tr>
-                        ) : error ? (
-                          <tr>
-                            <td colSpan="4" className="px-6 py-4 text-center text-sm text-red-500">
-                              {error}
-                            </td>
-                          </tr>
-                        ) : servicesForSale.length === 0 ? (
-                          <tr>
-                            <td colSpan="4" className="px-6 py-4 text-center text-sm text-gray-500">
-                              No services available.
-                            </td>
-                          </tr>
-                        ) : (
-                          servicesForSale.map((service) => (
-                            <tr key={service.id} className="hover:bg-gray-50 transition-colors">
-                              <td className="px-6 py-4 text-sm font-medium text-gray-900">{service.name}</td>
-                              <td className="px-6 py-4 text-sm text-gray-700">{service.description}</td>
-                              <td className="px-6 py-4 text-sm text-gray-700">${service.amount.toFixed(2)}</td>
-                              <td className="px-6 py-4 text-sm text-gray-700">
-                                <button
-                                  onClick={() => handleBuyClick(service)}
-                                  className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-1 px-3 rounded-lg transition-colors duration-300"
-                                >
-                                  Buy
-                                </button>
-                              </td>
-                            </tr>
-                          ))
-                        )}
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
-              </div>
-            </>
-          )}
-        </div>
-      </div>
-    </div>
-  );
-};
-
-// Example usage component to demonstrate both sell and buy modes
-const ServiceApp = () => {
-  const [currentType, setCurrentType] = useState('sell');
-
-  return (
-    <div className="min-h-screen bg-gray-50 p-6">
-      <div className="max-w-6xl mx-auto">
-        <div className="mb-6">
-          <div className="flex space-x-4">
-            <button
-              onClick={() => setCurrentType('sell')}
-              className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-                currentType === 'sell' 
-                  ? 'bg-blue-600 text-white' 
-                  : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-              }`}
-            >
-              Sell Services
-            </button>
-            <button
-              onClick={() => setCurrentType('buy')}
-              className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-                currentType === 'buy' 
-                  ? 'bg-blue-600 text-white' 
-                  : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-              }`}
-            >
-              Buy Services
-            </button>
+              </button>
+            </div>
           </div>
         </div>
-        
-        <ServiceSection type={currentType} />
-      </div>
-    </div>
-  );
-};
+      );
+    };
 
+    // Modified handleBuyClick function to show the confirmation dialog
+    const handleBuyClick = async (service) => {
+      setSelectedUser(service); // Store the service that was clicked
+      // setLoadingServiceId(service.id); // This state isn't used for the main loader now
 
-  const OrderHistorySection = () => {
-    const [orders, setOrders] = useState(orderHistory);
-    const [showApproveDialog, setShowApproveDialog] = useState(false);
-    const [showRejectDialog, setShowRejectDialog] = useState(false);
-    const [selectedOrderId, setSelectedOrderId] = useState(null);
-    const [rejectionReason, setRejectionReason] = useState('');
+      // Show custom confirmation dialog
+      setPendingService(service); // Set the service data for the dialog
+      setShowConfirmDialog(true);
+    };
 
-    // State to manage which dropdown is open
-    const [openDropdownId, setOpenDropdownId] = useState(null);
-    const dropdownRef = useRef(null); // Ref for detecting clicks outside
+    // Handle confirmation of purchase
+    const handleConfirmPurchase = async () => {
+      // Close the confirmation dialog immediately
 
-    // Close dropdown if clicked outside
-    useEffect(() => {
-      const handleClickOutside = (event) => {
-        if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
-          setOpenDropdownId(null);
+      const service = pendingService; // Get the service from pending state
+      if (!service) return; // Guard clause in case pendingService is null
+
+      const newUsersListedService = { // Data payload for the buy API
+        id: service.id, // Assuming 'id' is required for the buy endpoint
+        buyer_id: localStorage.getItem("userId"),
+        service_name: service.service_name,
+        desc: service.desc,
+        amount: String(service.amount),
+        memo: service.desc, // Typo 'memon' corrected to 'memo'
+        price: '1', // Hardcoded, as in sell form
+        created_by: localStorage.getItem("name"),
+        secretKey: localStorage.getItem("private_key"),
+      };
+
+      setIsLoading(true); // <--- Start loader for the actual buy API call
+
+      try {
+        const response = await fetch('http://localhost:3010/api/v1/offers/buy', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${localStorage.getItem('token')}` // Add token here
+          },
+          body: JSON.stringify(newUsersListedService),
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json().catch(() => ({
+            message: 'No error message provided'
+          }));
+          throw new Error(`HTTP error! status: ${response.status} - ${errorData.message || response.statusText}`);
         }
-      };
-      document.addEventListener('mousedown', handleClickOutside);
-      return () => {
-        document.removeEventListener('mousedown', handleClickOutside);
-      };
-    }, []);
 
-    const openApproveDialog = (orderId) => {
-      setSelectedOrderId(orderId);
-      setShowApproveDialog(true);
-      setOpenDropdownId(null); // Close dropdown when dialog opens
-    };
+        const data = await response.json();
+        console.log("Service Buy API Response:", JSON.stringify(data, null, 2));
 
-    const openRejectDialog = (orderId) => {
-      setSelectedOrderId(orderId);
-      setRejectionReason('');
-      setShowRejectDialog(true);
-      setOpenDropdownId(null); // Close dropdown when dialog opens
-    };
+        // Re-fetch the services to update the list after a successful purchase
+        // This ensures the 'buy' table reflects the updated status or removal of the purchased item
+        const userId = localStorage.getItem("userId");
+        const fetchResponse = await fetch(`http://localhost:3010/api/v1/offers?userId=${userId}`, {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${localStorage.getItem('token')}` // Add token here
+          },
+        });
 
-    const closeDialogs = () => {
-      setShowApproveDialog(false);
-      setShowRejectDialog(false);
-      setSelectedOrderId(null);
-      setRejectionReason('');
-    };
+        if (fetchResponse.ok) {
 
-    const confirmApprove = () => {
-      if (selectedOrderId !== null) {
-        console.log(`Approving order: ${selectedOrderId}`);
-        setOrders(orders.map(order =>
-          order.id === selectedOrderId ? { ...order, status: 'completed' } : order
-        ));
+          const fetchData = await fetchResponse.json();
+          setCatalogServices(fetchData.offers || []);
+          setIsLoading(false); // <--- Stop loader regardless of success or failure
+          setShowConfirmDialog(false);
+
+        }
+
+      } catch (error) {
+        console.error("Error buying service:", error);
+        alert(`Failed to buy service: ${error.message}`);
+      } finally {
+        setIsLoading(false); // <--- Stop loader regardless of success or failure
+        setLoadingServiceId(null); // Clear any specific service loading state
+        setPendingService(null); // Clear the pending service
+        setShowConfirmDialog(false);
+        // No form fields to clear here, as this is a buy operation from a list
       }
-      closeDialogs();
     };
 
-    const confirmReject = () => {
-      if (selectedOrderId !== null && rejectionReason.trim() !== '') {
-        console.log(`Rejecting order: ${selectedOrderId} with reason: "${rejectionReason}"`);
-        setOrders(orders.map(order =>
-          order.id === selectedOrderId ? { ...order, status: 'rejected', rejectionReason: rejectionReason } : order
-        ));
-      } else {
-        alert('Please provide a rejection reason.');
-        return;
-      }
-      closeDialogs();
+    // Handle cancellation of purchase from the dialog
+    const handleCancelPurchase = () => {
+      setShowConfirmDialog(false); // Close dialog
+      setLoadingServiceId(null); // Clear any specific service loading state
+      setPendingService(null); // Clear the pending service
     };
 
     return (
       <div className="space-y-6">
-        <h2 className="text-2xl font-bold text-gray-800">Transaction History</h2>
+        <h2 className="text-2xl font-bold text-gray-800">{type === 'sell' ? 'Sell Services' : 'Buy Services'}</h2>
 
-        <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead className="bg-gray-100">
-                <tr>
-                  <th className="px-6 py-4 text-left text-sm font-medium text-gray-700">Date</th>
-                  <th className="px-6 py-4 text-left text-sm font-medium text-gray-700">Type</th>
-                  <th className="px-6 py-4 text-left text-sm font-medium text-gray-700">Service</th>
-                  <th className="px-6 py-4 text-left text-sm font-medium text-gray-700">Quantity</th>
-                  <th className="px-6 py-4 text-left text-sm font-medium text-gray-700">Price</th>
-                  <th className="px-6 py-4 text-left text-sm font-medium text-gray-700">Status</th>
-                  <th className="px-6 py-4 text-left text-sm font-medium text-gray-700">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-200">
-                {orders.map((order) => (
-                  <tr key={order.id} className="hover:bg-gray-50 transition-colors">
-                    <td className="px-6 py-4 text-sm text-gray-700">
-                      {new Date(order.date).toLocaleDateString()}
-                    </td>
-                    <td className="px-6 py-4">
-                      <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${order.type === 'buy'
-                        ? 'bg-green-100 text-green-700'
-                        : 'bg-blue-100 text-blue-700'
-                        }`}>
-                        {order.type === 'buy' ? <ShoppingCart className="w-3 h-3 mr-1" /> : <DollarSign className="w-3 h-3 mr-1" />}
-                        {order.type === 'buy' ? 'BUY' : 'SALE'}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 text-sm font-medium text-gray-900">
-                      {itServices.find(s => s.id === order.service)?.name || order.service}
-                    </td>
-                    <td className="px-6 py-4 text-sm text-gray-700">{order.quantity}</td>
-                    <td className="px-6 py-4 text-sm text-gray-700">${order.price.toLocaleString()}</td>
-                    <td className="px-6 py-4">
-                      <span className={`inline-flex px-2 py-1 rounded-full text-xs font-medium
-                      ${order.status === 'completed'
-                          ? 'bg-green-100 text-green-700'
-                          : order.status === 'approved'
-                            ? 'bg-purple-100 text-purple-700'
-                            : order.status === 'rejected'
-                              ? 'bg-red-100 text-red-700'
-                              : 'bg-yellow-100 text-yellow-700'
-                        }`}>
-                        {order.status === 'approved' && <CheckCircle className="w-3 h-3 mr-1" />}
-                        {order.status === 'rejected' && <XCircle className="w-3 h-3 mr-1" />}
-                        {order.status}
-                      </span>
-                      {order.status === 'rejected' && order.rejectionReason && (
-                        <p className="text-xs text-gray-500 mt-1">Reason: {order.rejectionReason}</p>
+        <div className={`grid gap-8 ${type === 'sell' ? 'grid-cols-1' : 'grid-cols-1'}`}>
+          <div>
+            {type === 'sell' && (
+              <>
+                <div className="space-y-6 rounded-2xl border border-gray-300" style={{ width: '68rem', marginLeft: '15rem', padding: "2rem" }}>
+                  <div className="space-y-4">
+                    <div>
+                      <label htmlFor="sellInput" className="block text-sm font-medium text-gray-700 mb-2">Service Name</label>
+                      <input
+                        type="text"
+                        id="sellInput"
+                        value={sellInput}
+                        onChange={(e) => setSellInput(e.target.value)}
+                        placeholder="e.g., Custom Web Design"
+                        className={`w-full bg-gray-100 border rounded-lg px-4 py-3 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 ${sellFormErrors.sellInput ? 'border-red-500' : 'border-gray-300'}`}
+                      />
+                      {sellFormErrors.sellInput && <p className="text-red-500 text-xs mt-1">{sellFormErrors.sellInput}</p>}
+                    </div>
+
+                    <div>
+                      <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-2">Description</label>
+                      <textarea
+                        id="description"
+                        value={description}
+                        onChange={(e) => setDescription(e.target.value)}
+                        placeholder="Detailed description of your service"
+                        rows="3"
+                        className={`w-full bg-gray-100 border rounded-lg px-4 py-3 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none ${sellFormErrors.description ? 'border-red-500' : 'border-gray-300'}`}
+                      />
+                      {sellFormErrors.description && <p className="text-red-500 text-xs mt-1">{sellFormErrors.description}</p>}
+                    </div>
+
+                    <div>
+                      <label htmlFor="amount" className="block text-sm font-medium text-gray-700 mb-2">Amount ($)</label>
+                      <input
+                        type="number"
+                        id="amount"
+                        value={amount}
+                        onChange={(e) => setAmount(e.target.value)}
+                        placeholder="e.g., 500.00"
+                        min="0"
+                        step="0.01"
+                        className={`w-full bg-gray-100 border rounded-lg px-4 py-3 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 ${sellFormErrors.amount ? 'border-red-500' : 'border-gray-300'}`}
+                      />
+                      {sellFormErrors.amount && <p className="text-red-500 text-xs mt-1">{sellFormErrors.amount}</p>}
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={handleSubmitSell}
+                      className="w-full py-3 rounded-lg font-semibold transition-all duration-300 bg-green-600 hover:bg-green-700 text-white flex items-center justify-center"
+                      disabled={isLoading} // Disable button while selling
+                    >
+                      {isLoading ? ( // Show loader when isLoading is true
+                        <>
+                          <Loader2 className="w-5 h-5 animate-spin mr-3" />
+                          Processing...
+                        </>
+                      ) : (
+                        'Sell Service'
                       )}
-                    </td>
-                    <td className="px-6 py-4 text-sm text-gray-700 relative"> {/* Added relative positioning for dropdown */}
-                      {/* Actions Dropdown */}
-                      <div ref={openDropdownId === order.id ? dropdownRef : null}>
-                        <button
-                          onClick={() => setOpenDropdownId(openDropdownId === order.id ? null : order.id)}
-                          className="p-1 rounded-full text-gray-600 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-                          aria-label="More actions"
-                        >
-                          <MoreVertical className="w-5 h-5" />
-                        </button>
+                    </button>
+                  </div>
+                </div>
+              </>
+            )}
 
-                        {openDropdownId === order.id && (
-                          <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg ring-1 ring-black ring-opacity-5 z-10">
-                            <div className="py-1" role="menu" aria-orientation="vertical" aria-labelledby="options-menu">
-                              {order.status === 'pending' && (
-                                <>
-                                  <button
-                                    onClick={() => openApproveDialog(order.id)}
-                                    className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900"
-                                    role="menuitem"
-                                  >
-                                    Approve
-                                  </button>
-                                  <button
-                                    onClick={() => openRejectDialog(order.id)}
-                                    className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900"
-                                    role="menuitem"
-                                  >
-                                    Reject
-                                  </button>
-                                </>
-                              )}
-                              {order.status === 'completed' && (
-                                <span className="block px-4 py-2 text-sm text-gray-500 italic">No actions needed</span>
-                              )}
-                              {order.status === 'approved' && (
-                                <span className="block px-4 py-2 text-sm text-gray-500 italic">Already Approved</span>
-                              )}
-                              {order.status === 'rejected' && (
-                                <span className="block px-4 py-2 text-sm text-gray-500 italic">Already Rejected</span>
-                              )}
-                            </div>
-                          </div>
-                        )}
+            {type === 'buy' && (
+              <>
+                <div className="space-y-6 rounded-2xl border border-gray-300" style={{ padding: "2rem" }}>
+                  <h3 className="text-lg font-semibold text-gray-800 mb-4">Available Services</h3>
+                  <div className="space-y-6">
+                    <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
+                      <div className="overflow-x-auto">
+                        <table className="w-full">
+                          <thead className="bg-gray-100">
+                            <tr>
+                              <th className="px-6 py-4 text-left text-sm font-medium text-gray-700">Service Name</th>
+                              <th className="px-6 py-4 text-left text-sm font-medium text-gray-700">Description</th>
+                              <th className="px-6 py-4 text-left text-sm font-medium text-gray-700">Amount</th>
+                              <th className="px-6 py-4 text-left text-sm font-medium text-gray-700">Status</th>
+                              <th className="px-6 py-4 text-left text-sm font-medium text-gray-700">Actions</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-gray-200">
+                            {loading ? ( // Loader for initial fetch of buyable services
+                              <tr>
+                                <td colSpan="5" className="px-6 py-4 text-center text-sm text-gray-500">
+                                  <div className="flex items-center justify-center">
+                                    <Loader2 className="w-5 h-5 animate-spin mr-2" />
+                                    Loading services...
+                                  </div>
+                                </td>
+                              </tr>
+                            ) : error ? (
+                              <tr>
+                                <td colSpan="5" className="px-6 py-4 text-center text-sm text-red-500">
+                                  {error}
+                                </td>
+                              </tr>
+                            ) : servicesForSale.length === 0 ? (
+                              <tr>
+                                <td colSpan="5" className="px-6 py-4 text-center text-sm text-gray-500">
+                                  No services available.
+                                </td>
+                              </tr>
+                            ) : (
+                              servicesForSale.map((service) => (
+                                <tr key={service.id} className="hover:bg-gray-50 transition-colors">
+                                  <td className="px-6 py-4 text-sm font-medium text-gray-900">{service.service_name}</td>
+                                  <td className="px-6 py-4 text-sm text-gray-700">{service.desc}</td>
+                                  <td className="px-6 py-4 text-sm text-gray-700">${service.amount}</td>
+                                  <td className={`px-6 py-4 text-sm font-medium ${service.status === 'active'
+                                    ? 'text-green-600'
+                                    : service.status === 'completed'
+                                      ? 'text-blue-600'
+                                      : 'text-gray-700'
+                                    }`}>
+                                    {service.status}
+                                  </td>
+                                  <td className="px-6 py-4 text-sm text-gray-700">
+                                    <button
+                                      onClick={() => handleBuyClick(service)}
+                                      className="font-semibold py-1 px-3 rounded-lg transition-colors duration-300 bg-blue-600 hover:bg-blue-700 text-white"
+                                    >
+                                      Buy
+                                    </button>
+                                  </td>
+                                </tr>
+                              ))
+                            )}
+                          </tbody>
+                        </table>
                       </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+                    </div>
+                  </div>
+                </div>
+              </>
+            )}
           </div>
         </div>
 
-        {/* Approve Dialog (unchanged) */}
-        {showApproveDialog && (
-          <div className="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center z-50">
-            <div className="bg-white p-6 rounded-lg shadow-xl max-w-sm w-full">
-              <h3 className="text-lg font-bold mb-4">Confirm Approval</h3>
-              <p className="text-gray-700 mb-6">Are you sure you want to approve this order?</p>
-              <div className="flex justify-end space-x-3">
-                <button
-                  onClick={closeDialogs}
-                  className="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={confirmApprove}
-                  className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
-                >
-                  Approve
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Reject Dialog (unchanged) */}
-        {showRejectDialog && (
-          <div className="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center z-50">
-            <div className="bg-white p-6 rounded-lg shadow-xl max-w-sm w-full">
-              <h3 className="text-lg font-bold mb-4">Reject Order</h3>
-              <p className="text-gray-700 mb-4">Please provide a reason for rejecting this order:</p>
-              <textarea
-                className="w-full p-2 border border-gray-300 rounded-md mb-6 focus:ring-indigo-500 focus:border-indigo-500"
-                rows="4"
-                value={rejectionReason}
-                onChange={(e) => setRejectionReason(e.target.value)}
-                placeholder="Enter rejection reason..."
-              ></textarea>
-              <div className="flex justify-end space-x-3">
-                <button
-                  onClick={closeDialogs}
-                  className="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={confirmReject}
-                  className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
-                >
-                  Reject
-                </button>
-              </div>
-            </div>
-          </div>
+        {/* Confirmation Dialog */}
+        {showConfirmDialog && (
+          <ConfirmationDialog
+            isOpen={showConfirmDialog}
+            onConfirm={handleConfirmPurchase} // This function will trigger the isLoading state change
+            onCancel={handleCancelPurchase}
+            service={pendingService}
+            isLoading={isLoading} // Pass isLoading to the dialog to control its internal button loader
+          />
         )}
       </div>
     );
   };
 
 
+  // Example usage component to demonstrate both sell and buy modes
+  const ServiceApp = () => {
+    const [currentType, setCurrentType] = useState('sell');
+
+    return (
+      <div className="min-h-screen bg-gray-50 p-6">
+        <div className="max-w-6xl mx-auto">
+          <div className="mb-6">
+            <div className="flex space-x-4">
+              <button
+                onClick={() => setCurrentType('sell')}
+                className={`px-4 py-2 rounded-lg font-medium transition-colors ${currentType === 'sell'
+                  ? 'bg-blue-600 text-white'
+                  : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                  }`}
+              >
+                Sell Services
+              </button>
+              <button
+                onClick={() => setCurrentType('buy')}
+                className={`px-4 py-2 rounded-lg font-medium transition-colors ${currentType === 'buy'
+                  ? 'bg-blue-600 text-white'
+                  : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                  }`}
+              >
+                Buy Services
+              </button>
+            </div>
+          </div>
+
+          <ServiceSection type={currentType} />
+        </div>
+      </div>
+    );
+  };
+
+
+
+
+const OrderHistorySection = () => {
+    // State for orders is still useful to display the history
+    const [orders, setOrders] = useState(orderHistory);
+    const userId = localStorage.getItem("userId");
+   const fetchUsers = async () => {
+      try {
+        
+        const response = await fetch(`http://localhost:3010/api/v1/transactions?userId=${userId}`, {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+            'authorization': `Bearer ${localStorage.getItem('token')}` // Add token here
+          },
+        });
+
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const data = await response.json();
+        console.log("transactionstransactions", data);
+
+        setOrders(data.transactions || []);
+
+      } catch (error) {
+        console.error('Error fetching users:', error);
+       
+      } finally {
+        
+      }
+    };
+
+    // Fetch users when the component mounts
+    useEffect(() => {
+      fetchUsers();
+    }, []);
+
+    return (
+        <div className="space-y-6">
+            <h2 className="text-2xl font-bold text-gray-800">Transaction History</h2>
+
+            <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
+                <div className="overflow-x-auto">
+                    <table className="w-full">
+                        <thead className="bg-gray-100">
+                            <tr>
+                                <th className="px-6 py-4 text-left text-sm font-medium text-gray-700">Transaction id</th>
+                                <th className="px-6 py-4 text-left text-sm font-medium text-gray-700">Asset code</th>
+                                <th className="px-6 py-4 text-left text-sm font-medium text-gray-700">Amount</th>
+                                <th className="px-6 py-4 text-left text-sm font-medium text-gray-700">Seller id</th>
+                                <th className="px-6 py-4 text-left text-sm font-medium text-gray-700">Created at</th>
+
+                                {/* The 'Actions' column header is removed */}
+                            </tr>
+                        </thead>
+                        <tbody className="divide-y divide-gray-200">
+                            {orders.map((order) => (
+                                <tr key={order.id} className="hover:bg-gray-50 transition-colors">
+                                  <td className="px-6 py-4 text-sm text-gray-700">
+                                        {order.id}
+                                    </td>                                    
+                                    <td className="px-6 py-4 text-sm font-medium text-gray-900">
+                                        {order.asset_code}
+                                    </td>
+                                    <td className="px-6 py-4 text-sm text-gray-700">${order.amount}</td>
+
+                                    <td className="px-6 py-4 text-sm text-gray-700">{order.receiver_id}</td>
+                                    <td className="px-6 py-4 text-sm text-gray-700">
+                                        {order.created_at}
+                                    </td>
+                                  
+                                    {/* The entire 'Actions' table data cell (<td>) is removed */}
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            {/* All dialogs (Approve/Reject) and their related JSX are removed */}
+        </div>
+    );
+};
+
+
   // New User Management Section
   const AddUserDialog = ({ onClose, onUserAdded }) => { // Added onUserAdded prop
     const [name, setName] = useState('');
     const [email, setEmail] = useState('');
+    const [isLoading, setIsLoading] = useState(false);
 
     const handleSubmit = async (e) => {
       e.preventDefault();
@@ -918,12 +890,13 @@ const ServiceApp = () => {
       };
 
       console.log("KcAdminKcAdmin", userPayload);
-
+      setIsLoading(true);
       try {
         const response = await fetch('http://localhost:3010/api/v1/create', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
+            'Authorization': `Bearer ${localStorage.getItem('token')}` // Add token here
           },
           body: JSON.stringify(userPayload),
         });
@@ -942,6 +915,7 @@ const ServiceApp = () => {
       } catch (error) {
         console.error("Error adding user:", error);
         alert(`Failed to add user: ${error.message}`);
+        setIsLoading(false)
       }
     };
 
@@ -977,9 +951,22 @@ const ServiceApp = () => {
             </div>
             <button
               type="submit"
-              className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 rounded-lg transition-colors duration-300"
+              onClick={handleSubmit} // Ensure onClick is explicitly set if type is submit, or remove type="submit" and just use onClick
+              className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 rounded-lg transition-colors duration-300 flex items-center justify-center" // 👈 Added flex, items-center, justify-center for centering content
+              disabled={isLoading} // 👈 Disable button when loading
             >
-              Add User
+              {isLoading ? (
+                <>
+                  {/* Basic spinning loader SVG */}
+                  <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                  Adding...
+                </>
+              ) : (
+                'Add User'
+              )}
             </button>
           </form>
         </div>
@@ -1065,10 +1052,11 @@ const ServiceApp = () => {
       try {
         setLoading(true);
         setError(null);
-        const response = await fetch(`http://localhost:3010/api/v1/getUser`, {
+        const response = await fetch(`http://localhost:3010/api/v1/getAllUsers`, {
           method: 'GET',
           headers: {
             'Content-Type': 'application/json',
+            'Authorization': `Bearer ${localStorage.getItem('token')}` // Add token here
           },
         });
 
@@ -1125,6 +1113,7 @@ const ServiceApp = () => {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
+              'Authorization': `Bearer ${localStorage.getItem('token')}` // Add token here
             },
             body: JSON.stringify(payload), // Changed userPayload to payload
           });
@@ -1318,9 +1307,11 @@ const ServiceApp = () => {
   };
 
   return (
+    
     <div className="min-h-screen bg-white text-gray-900" style={{ // Changed bg-gray-900 to bg-white and text-white to text-gray-900
       background: 'linear-gradient(135deg, #f0f4f8 0%, #dbeafe 50%, #f0f4f8 100%)' // Changed gradient to lighter shades
     }}>
+       <ToastContainer />
       {/* Animated Background Elements */}
       <div className="fixed inset-0 overflow-hidden pointer-events-none">
         <div className="absolute w-80 h-80 bg-blue-300 rounded-full opacity-30 animate-pulse" style={{ // Changed color and opacity
