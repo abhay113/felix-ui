@@ -14,12 +14,21 @@ const App = ({ keycloak }: { keycloak: any }) => {
 
   if (keycloak.resourceAccess && keycloak.resourceAccess["resource-server"]) {
     console.log("Resource server roles:", keycloak.resourceAccess["resource-server"].roles);
-    // Assuming there's at least one role and we want to store the first one
-    if (keycloak.resourceAccess["resource-server"].roles.length > 0) {
-      localStorage.setItem('role', keycloak.resourceAccess["resource-server"].roles[0]);
+    const roles = keycloak.resourceAccess["resource-server"].roles;
+    
+    // Check if there are roles available
+    if (roles && roles.length > 0) {
+      // Assuming there's at least one role and we want to store the first one
+      localStorage.setItem('role', roles[0]);
+    } else {
+      // If resource-server exists but no roles are found, remove the 'role' from localStorage
+      console.log("Resource server found, but no roles. Removing 'role' from localStorage.");
+      localStorage.removeItem('role');
     }
   } else {
-    console.log("No resource-server roles found or resourceAccess is undefined.");
+    // If resourceAccess or resource-server is undefined, remove the 'role' from localStorage
+    console.log("No resource-server roles found or resourceAccess is undefined. Removing 'role' from localStorage.");
+    localStorage.removeItem('role');
   }
 
   const username = keycloak?.tokenParsed?.given_name;
