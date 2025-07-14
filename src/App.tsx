@@ -9,8 +9,18 @@ const App = ({ keycloak }: { keycloak: any }) => {
   const navigate = useNavigate();
   const location = useLocation();
 
-  console.log("keycloak?.tokenParsedkeycloak?.tokenParsed", keycloak.tokenParsed);
+  console.log("keycloak.resourceAccess",keycloak.resourceAccess);
+  
 
+  if (keycloak.resourceAccess && keycloak.resourceAccess["resource-server"]) {
+    console.log("Resource server roles:", keycloak.resourceAccess["resource-server"].roles);
+    // Assuming there's at least one role and we want to store the first one
+    if (keycloak.resourceAccess["resource-server"].roles.length > 0) {
+      localStorage.setItem('role', keycloak.resourceAccess["resource-server"].roles[0]);
+    }
+  } else {
+    console.log("No resource-server roles found or resourceAccess is undefined.");
+  }
 
   const username = keycloak?.tokenParsed?.given_name;
   console.log("usernameusernameusername", username);
