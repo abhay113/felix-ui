@@ -15,17 +15,16 @@ import { keycloak } from '../keycloak.ts';
 
 const Dashboard = ({ username }) => {
   const [groupName, setGroupName] = useState(null); // Initialize as null or empty string
-  const userName = localStorage.getItem('name');
-
-  const userId = localStorage.getItem('userId');
-
-  console.log("userIduserIduserIduserIduserIduserId",userId);
+  const userName = localStorage.getItem('name');  
   
   
-    const fetchUserId = async () => {
+  let fetchUsers
+
+  const role = localStorage.getItem('role');
+  if (role === "manager"){
+     fetchUsers = async () => {
     try {
-
-      const response = await fetch(`http://localhost:3010/api/v1/getUser/${userName}`, {
+       const responses = await fetch(`http://localhost:3010/api/v1/getUser/${userName}`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
@@ -33,29 +32,17 @@ const Dashboard = ({ username }) => {
         },
       });
 
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+      if (!responses.ok) {
+        throw new Error(`HTTP error! status: ${responses.status}`);
       }
 
-      const data = await response.json();
-      console.log("USerDADADADADADAD", data);
+      const userData = await responses.json();
+      console.log("USerDADADADADADAD", userData);
+      localStorage.setItem('userId', userData?.id);
+      const userId = localStorage.getItem('userId');
 
-      localStorage.setItem('public_key', data?.wallet?.public_key);
-      localStorage.setItem('private_key', data?.wallet?.secret_key);
-      localStorage.setItem('userId', data?.id);
-
-
-    } catch (error) {
-      console.error('Error fetching users:', error);
-    } finally {
-    }
-  };
-  let fetchUsers
-
-  const role = localStorage.getItem('role');
-  if (role === "manager"){
-     fetchUsers = async () => {
-    try {
+      console.log('userIduserIduserId',userId);
+      
 
       const response = await fetch(`http://localhost:3010/api/v1/getwalletDataofEntity/${userId}`, {
         method: 'GET',
@@ -72,9 +59,9 @@ const Dashboard = ({ username }) => {
       const data = await response.json();
       console.log("managermanagermanager", data);
 
-      localStorage.setItem('public_key', data?.wallet?.public_key);
-      localStorage.setItem('private_key', data?.wallet?.secret_key);
-      localStorage.setItem('userId', data?.id);
+      localStorage.setItem('public_key', data?.entities[0]?.wallet.public_key);
+      localStorage.setItem('private_key', data?.entities[0]?.wallet.secret_key);
+      
 
 
     } catch (error) {
@@ -118,7 +105,6 @@ const Dashboard = ({ username }) => {
   // Fetch users when the component mounts
   useEffect(() => {
     fetchUsers();
-    fetchUserId()
   }, []);
 
   // --- Effect to load groupName from localStorage once on component mount ---
