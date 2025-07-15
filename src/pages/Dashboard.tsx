@@ -22,6 +22,34 @@ const Dashboard = ({ username }) => {
   console.log("userIduserIduserIduserIduserIduserId",userId);
   
   
+    const fetchUserId = async () => {
+    try {
+
+      const response = await fetch(`http://localhost:3010/api/v1/getUser/${userName}`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}` // Add token here
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const data = await response.json();
+      console.log("USerDADADADADADAD", data);
+
+      localStorage.setItem('public_key', data?.wallet?.public_key);
+      localStorage.setItem('private_key', data?.wallet?.secret_key);
+      localStorage.setItem('userId', data?.id);
+
+
+    } catch (error) {
+      console.error('Error fetching users:', error);
+    } finally {
+    }
+  };
   let fetchUsers
 
   const role = localStorage.getItem('role');
@@ -90,6 +118,7 @@ const Dashboard = ({ username }) => {
   // Fetch users when the component mounts
   useEffect(() => {
     fetchUsers();
+    fetchUserId()
   }, []);
 
   // --- Effect to load groupName from localStorage once on component mount ---
