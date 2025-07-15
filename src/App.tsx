@@ -16,17 +16,13 @@ const App = ({ keycloak }: { keycloak: any }) => {
     console.log("Resource server roles:", keycloak.resourceAccess["resource-server"].roles);
     const roles = keycloak.resourceAccess["resource-server"].roles;
     
-    // Check if there are roles available
     if (roles && roles.length > 0) {
-      // Assuming there's at least one role and we want to store the first one
       localStorage.setItem('role', roles[0]);
     } else {
-      // If resource-server exists but no roles are found, remove the 'role' from localStorage
       console.log("Resource server found, but no roles. Removing 'role' from localStorage.");
       localStorage.removeItem('role');
     }
   } else {
-    // If resourceAccess or resource-server is undefined, remove the 'role' from localStorage
     console.log("No resource-server roles found or resourceAccess is undefined. Removing 'role' from localStorage.");
     localStorage.removeItem('role');
   }

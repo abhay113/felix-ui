@@ -16,7 +16,47 @@ import { keycloak } from '../keycloak.ts';
 const Dashboard = ({ username }) => {
   const [groupName, setGroupName] = useState(null); // Initialize as null or empty string
   const userName = localStorage.getItem('name');
-  const fetchUsers = async () => {
+
+  const userId = localStorage.getItem('userId');
+
+  console.log("userIduserIduserIduserIduserIduserId",userId);
+  
+  
+  let fetchUsers
+
+  const role = localStorage.getItem('role');
+  if (role === "manager"){
+     fetchUsers = async () => {
+    try {
+
+      const response = await fetch(`http://localhost:3010/api/v1/getwalletDataofEntity/${userId}`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}` // Add token here
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const data = await response.json();
+      console.log("managermanagermanager", data);
+
+      localStorage.setItem('public_key', data?.wallet?.public_key);
+      localStorage.setItem('private_key', data?.wallet?.secret_key);
+      localStorage.setItem('userId', data?.id);
+
+
+    } catch (error) {
+      console.error('Error fetching users:', error);
+    } finally {
+    }
+  };
+  } else {
+
+      fetchUsers = async () => {
     try {
 
       const response = await fetch(`http://localhost:3010/api/v1/getUser/${userName}`, {
@@ -44,6 +84,8 @@ const Dashboard = ({ username }) => {
     } finally {
     }
   };
+  }
+  
 
   // Fetch users when the component mounts
   useEffect(() => {
@@ -383,76 +425,76 @@ const Dashboard = ({ username }) => {
 
     // Function to handle submission for the 'sell' form (user listing)
     const handleSubmitSell = async () => {
-  setSellFormErrors({});
+      setSellFormErrors({});
 
-  let newErrors = {};
-  let isValid = true;
+      let newErrors = {};
+      let isValid = true;
 
-  if (!sellInput.trim()) {
-    newErrors.sellInput = 'Service name is required.';
-    isValid = false;
-  }
-  if (!description.trim()) {
-    newErrors.description = 'Description is required.';
-    isValid = false;
-  }
-  if (!amount || parseFloat(amount) <= 0) {
-    newErrors.amount = 'Amount must be a positive number.';
-    isValid = false;
-  }
-
-  setSellFormErrors(newErrors);
-
-  if (isValid) {
-    setIsLoading(true); // Start loader for sell operation
-
-    const newUsersListedService = {
-      seller_id: localStorage.getItem("userId"),
-      service_name: sellInput,
-      desc: description,
-      amount: String(amount),
-      memon: description, // Typo: 'memon' should likely be 'memo'
-      price: '1', // Hardcoded price, consider if this should be dynamic
-      created_by: localStorage.getItem("name"),
-      secretKey: localStorage.getItem("private_key"),
-    };
-
-    try {
-      const response = await fetch('http://localhost:3010/api/v1/offers/sell', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}` // Add token here
-        },
-        body: JSON.stringify(newUsersListedService),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({
-          message: 'No error message provided'
-        }));
-        throw new Error(`HTTP error! status: ${response.status} - ${errorData.message || response.statusText}`);
+      if (!sellInput.trim()) {
+        newErrors.sellInput = 'Service name is required.';
+        isValid = false;
+      }
+      if (!description.trim()) {
+        newErrors.description = 'Description is required.';
+        isValid = false;
+      }
+      if (!amount || parseFloat(amount) <= 0) {
+        newErrors.amount = 'Amount must be a positive number.';
+        isValid = false;
       }
 
-      const data = await response.json();
-      console.log("Service Listing API Response:", JSON.stringify(data, null, 2));
+      setSellFormErrors(newErrors);
 
-      // 🥳 Add this line for success toast!
-      toast.success("Service created successfully!");
+      if (isValid) {
+        setIsLoading(true); // Start loader for sell operation
 
-    } catch (error) {
-      console.error("Error listing service:", error);
-      alert(`Failed to list service: ${error.message}`);
-      // Optionally, you can also show an error toast here
-      toast.error(`Failed to list service: ${error.message}`);
-    } finally {
-      setIsLoading(false); // Stop loader for sell operation
-      setSellInput('');
-      setDescription('');
-      setAmount('');
-    }
-  }
-};
+        const newUsersListedService = {
+          seller_id: localStorage.getItem("userId"),
+          service_name: sellInput,
+          desc: description,
+          amount: String(amount),
+          memon: description, // Typo: 'memon' should likely be 'memo'
+          price: '1', // Hardcoded price, consider if this should be dynamic
+          created_by: localStorage.getItem("name"),
+          secretKey: localStorage.getItem("private_key"),
+        };
+
+        try {
+          const response = await fetch('http://localhost:3010/api/v1/offers/sell', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${localStorage.getItem('token')}` // Add token here
+            },
+            body: JSON.stringify(newUsersListedService),
+          });
+
+          if (!response.ok) {
+            const errorData = await response.json().catch(() => ({
+              message: 'No error message provided'
+            }));
+            throw new Error(`HTTP error! status: ${response.status} - ${errorData.message || response.statusText}`);
+          }
+
+          const data = await response.json();
+          console.log("Service Listing API Response:", JSON.stringify(data, null, 2));
+
+          // 🥳 Add this line for success toast!
+          toast.success("Service created successfully!");
+
+        } catch (error) {
+          console.error("Error listing service:", error);
+          alert(`Failed to list service: ${error.message}`);
+          // Optionally, you can also show an error toast here
+          toast.error(`Failed to list service: ${error.message}`);
+        } finally {
+          setIsLoading(false); // Stop loader for sell operation
+          setSellInput('');
+          setDescription('');
+          setAmount('');
+        }
+      }
+    };
 
     // ConfirmationDialog component (moved inside ServiceSection for simplicity, or can be external)
     const ConfirmationDialog = ({ isOpen, onConfirm, onCancel, service, isLoading = false }) => {
@@ -597,7 +639,7 @@ const Dashboard = ({ username }) => {
           <div>
             {type === 'sell' && (
               <>
-                <div className="space-y-6 rounded-2xl border border-gray-300" style={{ width: '68rem',margin: 'auto', padding: "2rem" }}>
+                <div className="space-y-6 rounded-2xl border border-gray-300" style={{ width: '68rem', margin: 'auto', padding: "2rem" }}>
                   <div className="space-y-4">
                     <div>
                       <label htmlFor="sellInput" className="block text-sm font-medium text-gray-700 mb-2">Service Name</label>
@@ -789,48 +831,48 @@ const Dashboard = ({ username }) => {
 
 
 
-const OrderHistorySection = () => {
+  const OrderHistorySection = () => {
     // State for orders is still useful to display the history
     const [orders, setOrders] = useState(orderHistory);
     const userId = localStorage.getItem("userId");
-   const fetchUsers = async () => { // Pass groupName as an argument
+    const fetchUsers = async () => { // Pass groupName as an argument
 
-    console.log("groupName",groupName);
-    
-  try {
-    let apiUrl;
+      console.log("groupName", groupName);
 
-    if (groupName === 'admin') {
-      apiUrl = `http://localhost:3010/api/v1/transactions`;
-    
-    } else {
-      apiUrl = `http://localhost:3010/api/v1/transactions?userId=${userId}`;
-    }
+      try {
+        let apiUrl;
 
-    console.log("transactions data:transactions data:",apiUrl);
-    
+        if (groupName === 'admin') {
+          apiUrl = `http://localhost:3010/api/v1/transactions`;
 
-    const response = await fetch(apiUrl, {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-        'authorization': `Bearer ${localStorage.getItem('token')}`
-      },
-    });
+        } else {
+          apiUrl = `http://localhost:3010/api/v1/transactions?userId=${userId}`;
+        }
 
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
+        console.log("transactions data:transactions data:", apiUrl);
 
-    const data = await response.json();
-    console.log("transactions data:", data);
 
-    setOrders(data.transactions || []);
+        const response = await fetch(apiUrl, {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+            'authorization': `Bearer ${localStorage.getItem('token')}`
+          },
+        });
 
-  } catch (error) {
-    console.error('Error fetching transactions:', error);
-  }
-};
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const data = await response.json();
+        console.log("transactions data:", data);
+
+        setOrders(data.transactions || []);
+
+      } catch (error) {
+        console.error('Error fetching transactions:', error);
+      }
+    };
 
     // Fetch users when the component mounts
     useEffect(() => {
@@ -838,52 +880,65 @@ const OrderHistorySection = () => {
     }, []);
 
     return (
-        <div className="space-y-6">
-            <h2 className="text-2xl font-bold text-gray-800">Transaction History</h2>
+      <div className="space-y-6">
+        <h2 className="text-2xl font-bold text-gray-800">Transaction History</h2>
 
-            <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
-                <div className="overflow-x-auto">
-                    <table className="w-full">
-                        <thead className="bg-gray-100">
-                            <tr>
-                                <th className="px-6 py-4 text-left text-sm font-medium text-gray-700">Transaction Id</th>
-                                 <th className="px-6 py-4 text-left text-sm font-medium text-gray-700">Transaction Type</th>
-                                  <th className="px-6 py-4 text-left text-sm font-medium text-gray-700">Memo</th>
-                                <th className="px-6 py-4 text-left text-sm font-medium text-gray-700">Asset code</th>
-                                <th className="px-6 py-4 text-left text-sm font-medium text-gray-700">Amount</th>
-                                <th className="px-6 py-4 text-left text-sm font-medium text-gray-700">Created at</th>
+        <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead className="bg-gray-100">
+                <tr>
+                  <th className="px-6 py-4 text-left text-sm font-medium text-gray-700">Transaction Id</th>
+                  <th className="px-6 py-4 text-left text-sm font-medium text-gray-700">Transaction Type</th>
+                  <th className="px-6 py-4 text-left text-sm font-medium text-gray-700">Memo</th>
+                  <th className="px-6 py-4 text-left text-sm font-medium text-gray-700">Asset Code</th>
+                  <th className="px-6 py-4 text-left text-sm font-medium text-gray-700">Amount</th>
+                  <th className="px-6 py-4 text-left text-sm font-medium text-gray-700">Transaction Hash</th>
 
-                                {/* The 'Actions' column header is removed */}
-                            </tr>
-                        </thead>
-                        <tbody className="divide-y divide-gray-200">
-                            {orders.map((order) => (
-                                <tr key={order.id} className="hover:bg-gray-50 transition-colors">
-                                  <td className="px-6 py-4 text-sm text-gray-700">
-                                        {order.id}
-                                    </td>                                    
-                                    <td className="px-6 py-4 text-sm font-medium text-gray-900">
-                                        {order.asset_code}
-                                    </td>
-                                    <td className="px-6 py-4 text-sm text-gray-700">${order.amount}</td>
+                  {/* The 'Actions' column header is removed */}
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-200">
+                {orders.map((order) => (
+                  <tr
+                    key={order.id}
+                    className="hover:bg-gray-50 transition-colors"
+                  >
+                    <td className="px-6 py-4 text-sm text-gray-700">
+                      {order.id}
+                    </td>
 
-                                    <td className="px-6 py-4 text-sm text-gray-700">{order.receiver_id}</td>
-                                    <td className="px-6 py-4 text-sm text-gray-700">
-                                        {order.created_at}
-                                    </td>
-                                  
-                                    {/* The entire 'Actions' table data cell (<td>) is removed */}
-                                </tr>
-                            ))}
-                        </tbody>
-                    </table>
-                </div>
-            </div>
+                    <td className={`px-6 py-4 text-sm font-medium ${order.transaction_type === 'sell'
+                        ? 'text-red-800  rounded-full px-3 py-1 inline-block'
+                        : order.transaction_type === 'buy'
+                          ? 'text-green-800  rounded-full px-3 py-1 inline-block'
+                          : 'text-gray-900'
+                      }`}>
+                      {order.transaction_type}
+                    </td>
 
-            {/* All dialogs (Approve/Reject) and their related JSX are removed */}
+                    <td className="px-6 py-4 text-sm text-gray-700">{order.memo}</td>
+
+                    <td className="px-6 py-4 text-sm text-gray-700">{order.asset_code}</td>
+
+                    <td className="px-6 py-4 text-sm text-gray-700">
+                      ${order.amount}
+                    </td>
+
+                    <td className="px-6 py-4 text-sm text-gray-700">
+                      {order.tx_hash}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
+
+        {/* All dialogs (Approve/Reject) and their related JSX are removed */}
+      </div>
     );
-};
+  };
 
 
   // New User Management Section
@@ -1198,11 +1253,11 @@ const OrderHistorySection = () => {
                       <td className="px-6 py-4 text-sm font-medium text-gray-900">{user.username}</td>
                       <td className="px-6 py-4 text-sm font-medium text-gray-900">{user.email}</td>
                       <td className="px-6 py-4 text-sm text-gray-700">{user?.walletData?.balance}</td>
-                     <td className="px-6 py-4 text-sm text-gray-700">
-                    {user?.walletData?.public_key
-                      ? `${user.walletData.public_key.substring(0, 6)}....${user.walletData.public_key.substring(user.walletData.public_key.length - 6)}`
-                      : 'N/A'} {/* or an empty string, or a placeholder */}
-                  </td>
+                      <td className="px-6 py-4 text-sm text-gray-700">
+                        {user?.walletData?.public_key
+                          ? `${user.walletData.public_key.substring(0, 6)}....${user.walletData.public_key.substring(user.walletData.public_key.length - 6)}`
+                          : 'N/A'} {/* or an empty string, or a placeholder */}
+                      </td>
                       <td className="px-6 py-4 text-sm text-gray-700">
                         <button
                           onClick={() => handleIssueClick(user)}
@@ -1239,539 +1294,541 @@ const OrderHistorySection = () => {
     );
   };
 
-const CheckboxMultiSelect = ({ options, selectedValues, onChange, label, disabled, loading }) => {
-  const [isOpen, setIsOpen] = useState(false);
-  const dropdownRef = useRef(null);
+  const CheckboxMultiSelect = ({ options, selectedValues, onChange, label, disabled, loading }) => {
+    const [isOpen, setIsOpen] = useState(false);
+    const dropdownRef = useRef(null);
 
-  // Close dropdown when clicking outside
-  useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
-        setIsOpen(false);
-      }
-    };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
-  }, []);
+    // Close dropdown when clicking outside
+    useEffect(() => {
+      const handleClickOutside = (event) => {
+        if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+          setIsOpen(false);
+        }
+      };
+      document.addEventListener('mousedown', handleClickOutside);
+      return () => {
+        document.removeEventListener('mousedown', handleClickOutside);
+      };
+    }, []);
 
-  const handleCheckboxChange = (event) => {
-    const { value, checked } = event.target;
-    if (checked) {
-      onChange([...selectedValues, value]);
-    } else {
-      onChange(selectedValues.filter((item) => item !== value));
-    }
-  };
-
-  const getDisplayValue = () => {
-    if (loading) return `Loading ${label.toLowerCase()}...`;
-    if (selectedValues.length === 0) return `Select ${label.toLowerCase()}`;
-    if (selectedValues.length === options.length && options.length > 0) return `All ${label.toLowerCase()} selected`;
-    // Map selected IDs back to their names for display
-    return selectedValues
-      .map((id) => options.find((opt) => opt.id === id)?.name)
-      .filter(Boolean) // Filter out any undefined names if an ID isn't found
-      .join(', ');
-  };
-
-  return (
-    <div className="relative" ref={dropdownRef}>
-      <label className="block text-sm font-medium text-gray-700 mb-2">{label}</label>
-      <button
-        type="button"
-        className="w-full bg-gray-100 border border-gray-300 rounded-lg px-4 py-3 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 flex justify-between items-center"
-        onClick={() => setIsOpen(!isOpen)}
-        disabled={disabled || loading}
-      >
-        <span>{getDisplayValue()}</span>
-        <ChevronDown className={`w-5 h-5 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
-      </button>
-      {isOpen && (
-        <div className="absolute z-10 w-full bg-white border border-gray-300 rounded-lg shadow-lg mt-1 max-h-60 overflow-y-auto">
-          {loading ? (
-            <div className="p-3 text-gray-600">Loading...</div>
-          ) : options.length === 0 ? (
-            <div className="p-3 text-gray-600">No {label.toLowerCase()} available</div>
-          ) : (
-            options.map((option) => (
-              <label key={option.id} className="flex items-center p-3 hover:bg-gray-50 cursor-pointer">
-                <input
-                  type="checkbox"
-                  value={option.id}
-                  checked={selectedValues.includes(option.id)}
-                  onChange={handleCheckboxChange}
-                  className="form-checkbox h-4 w-4 text-blue-600 rounded"
-                />
-                <span className="ml-2 text-gray-800">{option.name}</span>
-              </label>
-            ))
-          )}
-        </div>
-      )}
-    </div>
-  );
-};
-
-const AddEntityDialog = ({ onClose, onEntityAdded }) => {
-  const [name, setName] = useState('');
-  const [type, setType] = useState('');
-  const [managerId, setManagerId] = useState('');
-  const [selectedMembers, setSelectedMembers] = useState([]);
-  const [isLoading, setIsLoading] = useState(false); // For form submission
-  const [managers, setManagers] = useState([]);
-  const [members, setMembers] = useState([]);
-  const [managersLoading, setManagersLoading] = useState(false); // For managers data fetch
-  const [membersLoading, setMembersLoading] = useState(false);   // For members data fetch
-  const [error, setError] = useState(null); // State to hold any fetch errors
-
- 
-  const fetchManagers = async (token) => {
-    console.log("Fetching managers with token:", token ? "Token present" : "Token missing");
-    try {
-      const response = await fetch(`http://localhost:3010/api/v1/getAllUsers`, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}` // Use the passed token
-        },
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({ message: 'Unknown error' }));
-        throw new Error(`HTTP error! status: ${response.status} - ${errorData.message || response.statusText}`);
-      }
-
-      const data = await response.json();
-      console.log("data.datadata.data (Managers):", data); // Specific log for managers
-      
-      // Map the fetched data to ensure each object has 'id' and 'name' properties.
-      // This is crucial for consistency with UI components like CheckboxMultiSelect and select dropdowns.
-      return (data|| []).map(user => ({
-        id: user.id || user._id || user.userId, // Prioritize common ID fields, adjust as per your API
-        name: user.name || user.fullName || user.username // Prioritize common name fields, adjust as per your API
-      }));
-    } catch (error) {
-      console.error('Error fetching managers:', error);
-      // Provide a more specific error message for "Failed to fetch"
-      if (error.message === 'Failed to fetch') {
-        throw new Error('Failed to connect to the backend server. Please ensure the server is running and accessible at http://localhost:3010.');
-      }
-      throw error; // Re-throw the error to be caught by the calling useEffect
-    }
-  };
-
-
-  const fetchMembers = async (token) => {
-    console.log("Fetching members with token:", token ? "Token present" : "Token missing");
-    try {
-      const response = await fetch(`http://localhost:3010/api/v1/getAllUsers`, { // Assuming same endpoint for members
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}` // Use the passed token
-        },
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({ message: 'Unknown error' }));
-        throw new Error(`HTTP error! status: ${response.status} - ${errorData.message || response.statusText}`);
-      }
-
-      const data = await response.json();
-      console.log("members data.data (Members):", data); // Specific log for members
-
-      return (data || []).map(user => ({
-        id: user.id || user._id || user.userId, // Prioritize common ID fields, adjust as per your API
-        name: user.name || user.fullName || user.username // Prioritize common name fields, adjust as per your API
-      }));
-    } catch (error) {
-      console.error('Error fetching members:', error);
-      if (error.message === 'Failed to fetch') {
-        throw new Error('Failed to connect to the backend server. Please ensure the server is running and accessible at http://localhost:3010.');
-      }
-      throw error; // Re-throw the error to be caught by the calling useEffect
-    }
-  };
-
-  useEffect(() => {
-    const token = localStorage.getItem('token');
-
-    const loadData = async () => {
-      setManagersLoading(true);
-      setMembersLoading(true); // Set both to true initially
-      setError(null); // Clear previous errors
-
-      try {
-        const fetchedManagers = await fetchManagers(token);
-        console.log("fetchedManagersfetchedManagers",fetchedManagers); // This will now show the mapped data
-        setManagers(fetchedManagers);
-      } catch (err) {
-        console.error("Error fetching managers:", err);
-        setError(`Failed to load managers: ${err.message}`);
-      } finally {
-        setManagersLoading(false);
-      }
-
-      try {
-        const fetchedMembers = await fetchMembers(token);
-        setMembers(fetchedMembers);
-      } catch (err) {
-        console.error("Error fetching members:", err);
-        setError(prevErr => prevErr ? `${prevErr}\nFailed to load members: ${err.message}` : `Failed to load members: ${err.message}`);
-      } finally {
-        setMembersLoading(false);
-      }
-    };
-
-    loadData();
-  }, []); // Empty dependency array means this runs once on mount
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setError(null); // Clear previous errors on new submission
-
-    const entityPayload = {
-      name: name,
-      type: type,
-      description:'',
-      owner_id: managerId,
-      members: selectedMembers,
-      created_by: localStorage.getItem("name")
-    };
-
-    console.log("Entity Creation Payload:", entityPayload);
-    setIsLoading(true);
-    try {
-      const response = await fetch('http://localhost:3010/api/v1/entity/create', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        },
-        body: JSON.stringify(entityPayload),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({ message: 'No error message provided' }));
-        throw new Error(`HTTP error! status: ${response.status} - ${errorData.message || response.statusText}`);
-      }
-
-      const data = await response.json();
-      console.log("Entity Creation API Response:", JSON.stringify(data, null, 2));
-
-      onClose();
-      onEntityAdded(); // Notify parent component that entity was added
-
-    } catch (err) {
-      console.error("Error adding entity:", err);
-      // Display a user-friendly error message
-      if (err.message === 'Failed to fetch') {
-        setError('Failed to connect to the backend server for submission. Please ensure the server is running and accessible at http://localhost:3010.');
+    const handleCheckboxChange = (event) => {
+      const { value, checked } = event.target;
+      if (checked) {
+        onChange([...selectedValues, value]);
       } else {
-        setError(`Failed to add entity: ${err.message}`);
+        onChange(selectedValues.filter((item) => item !== value));
       }
-    } finally {
-      setIsLoading(false);
-    }
-  };
+    };
 
-  return (
-    <div className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-lg p-8 w-full max-w-md border border-gray-200 relative">
-        <button onClick={onClose} className="absolute top-4 right-4 text-gray-500 hover:text-gray-700">
-          <X className="w-6 h-6" />
+    const getDisplayValue = () => {
+      if (loading) return `Loading ${label.toLowerCase()}...`;
+      if (selectedValues.length === 0) return `Select ${label.toLowerCase()}`;
+      if (selectedValues.length === options.length && options.length > 0) return `All ${label.toLowerCase()} selected`;
+      // Map selected IDs back to their names for display
+      return selectedValues
+        .map((id) => options.find((opt) => opt.id === id)?.name)
+        .filter(Boolean) // Filter out any undefined names if an ID isn't found
+        .join(', ');
+    };
+
+    return (
+      <div className="relative" ref={dropdownRef}>
+        <label className="block text-sm font-medium text-gray-700 mb-2">{label}</label>
+        <button
+          type="button"
+          className="w-full bg-gray-100 border border-gray-300 rounded-lg px-4 py-3 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 flex justify-between items-center"
+          onClick={() => setIsOpen(!isOpen)}
+          disabled={disabled || loading}
+        >
+          <span>{getDisplayValue()}</span>
+          <ChevronDown className={`w-5 h-5 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
         </button>
-        <h2 className="text-2xl font-bold mb-6 text-gray-800">Add New Entity</h2>
-
-        {error && (
-          <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4" role="alert">
-            <strong className="font-bold">Error!</strong>
-            <span className="block sm:inline"> {error}</span>
+        {isOpen && (
+          <div className="absolute z-10 w-full bg-white border border-gray-300 rounded-lg shadow-lg mt-1 max-h-60 overflow-y-auto">
+            {loading ? (
+              <div className="p-3 text-gray-600">Loading...</div>
+            ) : options.length === 0 ? (
+              <div className="p-3 text-gray-600">No {label.toLowerCase()} available</div>
+            ) : (
+              options.map((option) => (
+                <label key={option.id} className="flex items-center p-3 hover:bg-gray-50 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    value={option.id}
+                    checked={selectedValues.includes(option.id)}
+                    onChange={handleCheckboxChange}
+                    className="form-checkbox h-4 w-4 text-blue-600 rounded"
+                  />
+                  <span className="ml-2 text-gray-800">{option.name}</span>
+                </label>
+              ))
+            )}
           </div>
         )}
+      </div>
+    );
+  };
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label htmlFor="type" className="block text-sm font-medium text-gray-700 mb-2">Entity Type</label>
-            <select
-              id="type"
-              value={type}
-              onChange={(e) => setType(e.target.value)}
-              className="w-full bg-gray-100 border border-gray-300 rounded-lg px-4 py-3 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
-              required
-            >
-              <option value="">Select a type</option>
-              <option value="coe">COE</option>
-              <option value="project">Project</option>
-              {/* <option value="Member">Member</option> - If this is a top-level entity, it might need different handling */}
-            </select>
-          </div>
-          <div>
-            <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-2">Name</label>
-            <input
-              type="text"
-              id="name"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              className="w-full bg-gray-100 border border-gray-300 rounded-lg px-4 py-3 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
-              required
-            />
-          </div>
-          <div>
-            <label htmlFor="manager" className="block text-sm font-medium text-gray-700 mb-2">Select Manager</label>
-            <select
-              id="manager"
-              value={managerId}
-              onChange={(e) => setManagerId(e.target.value)}
-              className="w-full bg-gray-100 border border-gray-300 rounded-lg px-4 py-3 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
-              disabled={managersLoading} // Disable if managers are loading
-            >
-              <option value="">{managersLoading ? 'Loading managers...' : 'Select a manager'}</option>
-              {managers.map((manager) => (
-                <option key={manager.id} value={manager.id}>
-                  {manager.name}
-                </option>
-              ))}
-            </select>
-          </div>
-          {/* Custom CheckboxMultiSelect for members */}
-          <CheckboxMultiSelect
-            label="Select Members"
-            options={members}
-            selectedValues={selectedMembers}
-            onChange={setSelectedMembers}
-            disabled={membersLoading} // Disable if members are loading
-            loading={membersLoading} // Pass loading state to component for internal display
-          />
+  const AddEntityDialog = ({ onClose, onEntityAdded }) => {
+    const [name, setName] = useState('');
+    const [type, setType] = useState('');
+    const [managerId, setManagerId] = useState('');
+    const [selectedMembers, setSelectedMembers] = useState([]);
+    const [isLoading, setIsLoading] = useState(false); // For form submission
+    const [managers, setManagers] = useState([]);
+    const [members, setMembers] = useState([]);
+    const [managersLoading, setManagersLoading] = useState(false); // For managers data fetch
+    const [membersLoading, setMembersLoading] = useState(false);   // For members data fetch
+    const [error, setError] = useState(null); // State to hold any fetch errors
+    const [users, setUsers] = useState([]);
 
-          <button
-            type="submit"
-            className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 rounded-lg transition-colors duration-300 flex items-center justify-center"
-            disabled={isLoading || managersLoading || membersLoading} // Disable button if any process is loading
-          >
-            {isLoading ? (
-              <>
-                <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                </svg>
-                Adding Entity...
-              </>
-            ) : (
-              'Add Entity'
-            )}
+
+
+    const fetchManagers = async (token) => {
+      console.log("Fetching managers with token:", token ? "Token present" : "Token missing");
+      try {
+        const response = await fetch(`http://localhost:3010/api/v1/getAllUsers`, {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}` // Use the passed token
+          },
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json().catch(() => ({ message: 'Unknown error' }));
+          throw new Error(`HTTP error! status: ${response.status} - ${errorData.message || response.statusText}`);
+        }
+
+        const data = await response.json();
+        console.log("data.datadata.data (Managers):", data); // Specific log for managers
+
+        // Map the fetched data to ensure each object has 'id' and 'name' properties.
+        // This is crucial for consistency with UI components like CheckboxMultiSelect and select dropdowns.
+        return (data || []).map(user => ({
+          id: user.id || user._id || user.userId, // Prioritize common ID fields, adjust as per your API
+          name: user.name || user.fullName || user.username // Prioritize common name fields, adjust as per your API
+        }));
+      } catch (error) {
+        console.error('Error fetching managers:', error);
+        // Provide a more specific error message for "Failed to fetch"
+        if (error.message === 'Failed to fetch') {
+          throw new Error('Failed to connect to the backend server. Please ensure the server is running and accessible at http://localhost:3010.');
+        }
+        throw error; // Re-throw the error to be caught by the calling useEffect
+      }
+    };
+
+
+    const fetchMembers = async (token) => {
+      console.log("Fetching members with token:", token ? "Token present" : "Token missing");
+      try {
+        const response = await fetch(`http://localhost:3010/api/v1/getAllUsers`, { // Assuming same endpoint for members
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}` // Use the passed token
+          },
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json().catch(() => ({ message: 'Unknown error' }));
+          throw new Error(`HTTP error! status: ${response.status} - ${errorData.message || response.statusText}`);
+        }
+
+        const data = await response.json();
+        console.log("members data.data (Members):", data); // Specific log for members
+
+        return (data || []).map(user => ({
+          id: user.id || user._id || user.userId, // Prioritize common ID fields, adjust as per your API
+          name: user.name || user.fullName || user.username // Prioritize common name fields, adjust as per your API
+        }));
+      } catch (error) {
+        console.error('Error fetching members:', error);
+        if (error.message === 'Failed to fetch') {
+          throw new Error('Failed to connect to the backend server. Please ensure the server is running and accessible at http://localhost:3010.');
+        }
+        throw error; // Re-throw the error to be caught by the calling useEffect
+      }
+    };
+
+    useEffect(() => {
+      const token = localStorage.getItem('token');
+
+      const loadData = async () => {
+        setManagersLoading(true);
+        setMembersLoading(true); // Set both to true initially
+        setError(null); // Clear previous errors
+
+        try {
+          const fetchedManagers = await fetchManagers(token);
+          console.log("fetchedManagersfetchedManagers", fetchedManagers); // This will now show the mapped data
+          setManagers(fetchedManagers);
+        } catch (err) {
+          console.error("Error fetching managers:", err);
+          setError(`Failed to load managers: ${err.message}`);
+        } finally {
+          setManagersLoading(false);
+        }
+
+        try {
+          const fetchedMembers = await fetchMembers(token);
+          setMembers(fetchedMembers);
+        } catch (err) {
+          console.error("Error fetching members:", err);
+          setError(prevErr => prevErr ? `${prevErr}\nFailed to load members: ${err.message}` : `Failed to load members: ${err.message}`);
+        } finally {
+          setMembersLoading(false);
+        }
+      };
+
+      loadData();
+    }, []); // Empty dependency array means this runs once on mount
+
+    const handleSubmit = async (e) => {
+      e.preventDefault();
+      setError(null); // Clear previous errors on new submission
+
+      const entityPayload = {
+        name: name,
+        type: type,
+        description: '',
+        owner_id: managerId,
+        members: selectedMembers,
+        created_by: localStorage.getItem("name")
+      };
+
+      console.log("Entity Creation Payload:", entityPayload);
+      setIsLoading(true);
+      try {
+        const response = await fetch('http://localhost:3010/api/v1/entity/create', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${localStorage.getItem('token')}`
+          },
+          body: JSON.stringify(entityPayload),
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json().catch(() => ({ message: 'No error message provided' }));
+          throw new Error(`HTTP error! status: ${response.status} - ${errorData.message || response.statusText}`);
+        }
+
+        const data = await response.json();
+        console.log("Entity Creation API Response:", JSON.stringify(data, null, 2));
+        setUsers(data || [])
+        onClose();
+        onEntityAdded(); // Notify parent component that entity was added
+
+      } catch (err) {
+        console.error("Error adding entity:", err);
+        // Display a user-friendly error message
+        if (err.message === 'Failed to fetch') {
+          setError('Failed to connect to the backend server for submission. Please ensure the server is running and accessible at http://localhost:3010.');
+        } else {
+          setError(`Failed to add entity: ${err.message}`);
+        }
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    return (
+      <div className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50 p-4">
+        <div className="bg-white rounded-lg p-8 w-full max-w-md border border-gray-200 relative">
+          <button onClick={onClose} className="absolute top-4 right-4 text-gray-500 hover:text-gray-700">
+            <X className="w-6 h-6" />
           </button>
-        </form>
-      </div>
-    </div>
-  );
-};
+          <h2 className="text-2xl font-bold mb-6 text-gray-800">Add New Entity</h2>
 
- const EntityManagementSection = () => {
-  const [isAddUserDialogOpen, setIsAddUserDialogOpen] = useState(false);
-  const [users, setUsers] = useState([]);
-  const [isIssueDialogOpen, setIsIssueDialogOpen] = useState(false);
-  const [selectedUser, setSelectedUser] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+          {error && (
+            <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4" role="alert">
+              <strong className="font-bold">Error!</strong>
+              <span className="block sm:inline"> {error}</span>
+            </div>
+          )}
 
-  const fetchUsers = async () => {
-    try {
-      setLoading(true);
-      setError(null);
-      const response = await fetch(`http://localhost:3010/api/v1/entities`, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}` // Add token here
-        },
-      });
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div>
+              <label htmlFor="type" className="block text-sm font-medium text-gray-700 mb-2">Entity Type</label>
+              <select
+                id="type"
+                value={type}
+                onChange={(e) => setType(e.target.value)}
+                className="w-full bg-gray-100 border border-gray-300 rounded-lg px-4 py-3 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                required
+              >
+                <option value="">Select a type</option>
+                <option value="coe">COE</option>
+                <option value="project">Project</option>
+                {/* <option value="Member">Member</option> - If this is a top-level entity, it might need different handling */}
+              </select>
+            </div>
+            <div>
+              <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-2">Name</label>
+              <input
+                type="text"
+                id="name"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                className="w-full bg-gray-100 border border-gray-300 rounded-lg px-4 py-3 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                required
+              />
+            </div>
+            <div>
+              <label htmlFor="manager" className="block text-sm font-medium text-gray-700 mb-2">Select Manager</label>
+              <select
+                id="manager"
+                value={managerId}
+                onChange={(e) => setManagerId(e.target.value)}
+                className="w-full bg-gray-100 border border-gray-300 rounded-lg px-4 py-3 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                disabled={managersLoading} // Disable if managers are loading
+              >
+                <option value="">{managersLoading ? 'Loading managers...' : 'Select a manager'}</option>
+                {managers.map((manager) => (
+                  <option key={manager.id} value={manager.id}>
+                    {manager.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+            {/* Custom CheckboxMultiSelect for members */}
+            <CheckboxMultiSelect
+              label="Select Members"
+              options={members}
+              selectedValues={selectedMembers}
+              onChange={setSelectedMembers}
+              disabled={membersLoading} // Disable if members are loading
+              loading={membersLoading} // Pass loading state to component for internal display
+            />
 
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      const data = await response.json();
-      console.log("data.datadata.data", data);
-
-      setUsers(data || []);
-
-    } catch (error) {
-      console.error('Error fetching users:', error);
-      setError(`Failed to load users. Please try again later.`);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // Fetch users when the component mounts
-  useEffect(() => {
-    fetchUsers();
-  }, []);
-
-  const handleIssueClick = (user) => {
-    console.log("handleIssueClick called with user:", user);
-    console.log("User object keys:", Object.keys(user));
-    console.log("User wallet_public_key:", user.wallet_public_key);
-    console.log("User entity_name:", user.entity_name);
-    
-    setSelectedUser(user);
-    setIsIssueDialogOpen(true);
-  };
-
-  const handleSubmitIssue = async ({ amount, comment }) => {
-    // Debug logging to see what we have
-    console.log("selectedUser:", selectedUser);
- 
-
-    const payload = {
-      receiverPublicKey: selectedUser.wallet_public_key,
-          amount: String(amount),
-          memo: comment,
-          walletId: selectedUser.wallet_id
-    
-    }
-
-    console.log("payloadpayloadpayload", payload);
-
-    try {
-      const response = await fetch('http://localhost:3010/api/v1/bluedollar/issue', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        },
-        body: JSON.stringify(payload),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({ message: 'No error message provided' }));
-        throw new Error(`HTTP error! status: ${response.status} - ${errorData.message || response.statusText}`);
-      }
-
-      const data = await response.json();
-      console.log("Issue Funds API Response:", JSON.stringify(data, null, 2));
-  
-      
-    } catch (error) {
-      console.error("Error issuing funds:", error);
-      alert(`Failed to issue funds: ${error.message}`);
-    }
-  };
-
-  // Function to call when a user is successfully added
-  const handleUserAdded = () => {
-    fetchUsers(); // Re-fetch the user list to update the table
-  };
-
-  return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h2 className="text-2xl font-bold text-gray-800">Entity Management</h2>
-        <button
-          onClick={() => setIsAddUserDialogOpen(true)}
-          className="flex items-center space-x-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-lg transition-colors duration-300"
-        >
-          <UserPlus className="w-5 h-5" />
-          <span>Create Entity</span>
-        </button>
-      </div>
-
-      <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead className="bg-gray-100">
-              <tr>
-                <th className="px-6 py-4 text-left text-sm font-medium text-gray-700">Entity Name</th>
-                <th className="px-6 py-4 text-left text-sm font-medium text-gray-700">Entity Type</th>
-                <th className="px-6 py-4 text-left text-sm font-medium text-gray-700">Wallet Balance</th>
-                <th className="px-6 py-4 text-left text-sm font-medium text-gray-700">Entity Manager</th>
-                <th className="px-6 py-4 text-left text-sm font-medium text-gray-700">Entity Wallet id</th>
-                <th className="px-6 py-4 text-left text-sm font-medium text-gray-700">Action</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-200">
-              {loading ? (
-                <tr>
-                  <td colSpan="6" className="px-6 py-4 text-center text-sm text-gray-500">
-                    Loading entities...
-                  </td>
-                </tr>
-              ) : error ? (
-                <tr>
-                  <td colSpan="6" className="px-6 py-4 text-center text-sm text-red-500">
-                    {error}
-                  </td>
-                </tr>
-              ) : users.length === 0 ? (
-                <tr>
-                  <td colSpan="6" className="px-6 py-4 text-center text-sm text-gray-500">
-                    No entities found.
-                  </td>
-                </tr>
+            <button
+              type="submit"
+              className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 rounded-lg transition-colors duration-300 flex items-center justify-center"
+              disabled={isLoading || managersLoading || membersLoading} // Disable button if any process is loading
+            >
+              {isLoading ? (
+                <>
+                  <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                  Adding Entity...
+                </>
               ) : (
-                users.map((user) => (
-                  <tr key={user.id} className="hover:bg-gray-50 transition-colors">
-                    <td className="px-6 py-4 text-sm font-medium text-gray-900">{user.entity_name}</td>
-                    <td className="px-6 py-4 text-sm font-medium text-gray-900">{user.type}</td>
-                    <td className="px-6 py-4 text-sm text-gray-700">{user?.wallet_balance}</td>
-                    <td className="px-6 py-4 text-sm text-gray-700">{user?.owner_name}</td>
-                    <td className="px-6 py-4 text-sm text-gray-700">
-                      {user?.wallet_public_key
-                        ? `${user.wallet_public_key.substring(0, 6)}....${user.wallet_public_key.substring(user.wallet_public_key.length - 6)}`
-                        : 'N/A'}
-                    </td>
-                    <td className="px-6 py-4 text-sm text-gray-700">
-                      <button
-                        onClick={() => handleIssueClick(user)}
-                        className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-1 px-3 rounded-lg transition-colors duration-300"
-                      >
-                        Issue
-                      </button>
-                    </td>
-                  </tr>
-                ))
+                'Add Entity'
               )}
-            </tbody>
-          </table>
+            </button>
+          </form>
         </div>
       </div>
+    );
+  };
 
-      {isAddUserDialogOpen && (
-        <AddEntityDialog
-          onClose={() => setIsAddUserDialogOpen(false)}
-          onUserAdded={handleUserAdded}
-        />
-      )}
-      
-      {isIssueDialogOpen && selectedUser && (
-        <IssueDialog
-          onClose={() => setIsIssueDialogOpen(false)}
-          onSubmitIssue={handleSubmitIssue}
-          selectedEntity={selectedUser} // Pass the entire entity object
-          entityName={selectedUser.entity_name} // Use entity_name instead of username
-          entityType={selectedUser.type}
-          onAmmoutAdded={handleUserAdded}
-        />
-      )}
-    </div>
-  );
-};
+  const EntityManagementSection = () => {
+    const [isAddUserDialogOpen, setIsAddUserDialogOpen] = useState(false);
+    const [users, setUsers] = useState([]);
+    const [isIssueDialogOpen, setIsIssueDialogOpen] = useState(false);
+    const [selectedUser, setSelectedUser] = useState(null);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
+
+    const fetchUsers = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        const response = await fetch(`http://localhost:3010/api/v1/entities`, {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${localStorage.getItem('token')}` // Add token here
+          },
+        });
+
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const data = await response.json();
+        console.log("data.datadata.data", data);
+
+        setUsers(data || []);
+
+      } catch (error) {
+        console.error('Error fetching users:', error);
+        setError(`Failed to load users. Please try again later.`);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    // Fetch users when the component mounts
+    useEffect(() => {
+      fetchUsers();
+    }, []);
+
+    const handleIssueClick = (user) => {
+      console.log("handleIssueClick called with user:", user);
+      console.log("User object keys:", Object.keys(user));
+      console.log("User wallet_public_key:", user.wallet_public_key);
+      console.log("User entity_name:", user.entity_name);
+
+      setSelectedUser(user);
+      setIsIssueDialogOpen(true);
+    };
+
+    const handleSubmitIssue = async ({ amount, comment }) => {
+      // Debug logging to see what we have
+      console.log("selectedUser:", selectedUser);
+
+
+      const payload = {
+        receiverPublicKey: selectedUser.wallet_public_key,
+        amount: String(amount),
+        memo: comment,
+        walletId: selectedUser.wallet_id
+
+      }
+
+      console.log("payloadpayloadpayload", payload);
+
+      try {
+        const response = await fetch('http://localhost:3010/api/v1/bluedollar/issue', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${localStorage.getItem('token')}`
+          },
+          body: JSON.stringify(payload),
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json().catch(() => ({ message: 'No error message provided' }));
+          throw new Error(`HTTP error! status: ${response.status} - ${errorData.message || response.statusText}`);
+        }
+
+        const data = await response.json();
+        console.log("Issue Funds API Response:", JSON.stringify(data, null, 2));
+
+
+      } catch (error) {
+        console.error("Error issuing funds:", error);
+        alert(`Failed to issue funds: ${error.message}`);
+      }
+    };
+
+    // Function to call when a user is successfully added
+    const handleUserAdded = () => {
+      fetchUsers(); // Re-fetch the user list to update the table
+    };
+
+    return (
+      <div className="space-y-6">
+        <div className="flex justify-between items-center">
+          <h2 className="text-2xl font-bold text-gray-800">Entity Management</h2>
+          <button
+            onClick={() => setIsAddUserDialogOpen(true)}
+            className="flex items-center space-x-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-lg transition-colors duration-300"
+          >
+            <UserPlus className="w-5 h-5" />
+            <span>Create Entity</span>
+          </button>
+        </div>
+
+        <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead className="bg-gray-100">
+                <tr>
+                  <th className="px-6 py-4 text-left text-sm font-medium text-gray-700">Entity Name</th>
+                  <th className="px-6 py-4 text-left text-sm font-medium text-gray-700">Entity Type</th>
+                  <th className="px-6 py-4 text-left text-sm font-medium text-gray-700">Wallet Balance</th>
+                  <th className="px-6 py-4 text-left text-sm font-medium text-gray-700">Entity Manager</th>
+                  <th className="px-6 py-4 text-left text-sm font-medium text-gray-700">Entity Wallet id</th>
+                  <th className="px-6 py-4 text-left text-sm font-medium text-gray-700">Action</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-200">
+                {loading ? (
+                  <tr>
+                    <td colSpan="6" className="px-6 py-4 text-center text-sm text-gray-500">
+                      Loading entities...
+                    </td>
+                  </tr>
+                ) : error ? (
+                  <tr>
+                    <td colSpan="6" className="px-6 py-4 text-center text-sm text-red-500">
+                      {error}
+                    </td>
+                  </tr>
+                ) : users.length === 0 ? (
+                  <tr>
+                    <td colSpan="6" className="px-6 py-4 text-center text-sm text-gray-500">
+                      No entities found.
+                    </td>
+                  </tr>
+                ) : (
+                  users.map((user) => (
+                    <tr key={user.id} className="hover:bg-gray-50 transition-colors">
+                      <td className="px-6 py-4 text-sm font-medium text-gray-900">{user.entity_name}</td>
+                      <td className="px-6 py-4 text-sm font-medium text-gray-900">{user.type}</td>
+                      <td className="px-6 py-4 text-sm text-gray-700">{user?.wallet_balance}</td>
+                      <td className="px-6 py-4 text-sm text-gray-700">{user?.owner_name}</td>
+                      <td className="px-6 py-4 text-sm text-gray-700">
+                        {user?.wallet_public_key
+                          ? `${user.wallet_public_key.substring(0, 6)}....${user.wallet_public_key.substring(user.wallet_public_key.length - 6)}`
+                          : 'N/A'}
+                      </td>
+                      <td className="px-6 py-4 text-sm text-gray-700">
+                        <button
+                          onClick={() => handleIssueClick(user)}
+                          className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-1 px-3 rounded-lg transition-colors duration-300"
+                        >
+                          Issue
+                        </button>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        {isAddUserDialogOpen && (
+          <AddEntityDialog
+            onClose={() => setIsAddUserDialogOpen(false)}
+            onUserAdded={handleUserAdded}
+          />
+        )}
+
+        {isIssueDialogOpen && selectedUser && (
+          <IssueDialog
+            onClose={() => setIsIssueDialogOpen(false)}
+            onSubmitIssue={handleSubmitIssue}
+            selectedEntity={selectedUser} // Pass the entire entity object
+            entityName={selectedUser.entity_name} // Use entity_name instead of username
+            entityType={selectedUser.type}
+            onAmmoutAdded={handleUserAdded}
+          />
+        )}
+      </div>
+    );
+  };
 
   const renderContent = () => {
     switch (activeSection) {
       case 'account':
         return <AccountSection />;
-        case 'entity':
-        return <EntityManagementSection />;
       case 'buy':
         return <ServiceSection type="buy" />;
       case 'sell':
         return <ServiceSection type="sell" />;
       case 'history':
         return <OrderHistorySection />;
+        case 'entity':
+        return <EntityManagementSection />;
       case 'users': // New case for User Management
         return <UserManagementSection />;
       default:
@@ -1847,11 +1904,11 @@ const AddEntityDialog = ({ onClose, onEntityAdded }) => {
   };
 
   return (
-    
+
     <div className="min-h-screen bg-white text-gray-900" style={{ // Changed bg-gray-900 to bg-white and text-white to text-gray-900
       background: 'linear-gradient(135deg, #f0f4f8 0%, #dbeafe 50%, #f0f4f8 100%)' // Changed gradient to lighter shades
     }}>
-       <ToastContainer />
+      <ToastContainer />
       {/* Animated Background Elements */}
       <div className="fixed inset-0 overflow-hidden pointer-events-none">
         <div className="absolute w-80 h-80 bg-blue-300 rounded-full opacity-30 animate-pulse" style={{ // Changed color and opacity
@@ -1887,14 +1944,7 @@ const AddEntityDialog = ({ onClose, onEntityAdded }) => {
               isActive={activeSection === 'dashboard'}
               onClick={setActiveSection}
             />
-              {groupName === 'admin' && (
-            <NavigationItem
-              id="entity"
-              icon={<Wallet className="w-5 h-5" />}
-              label="Entity"
-              isActive={activeSection === 'entity'}
-              onClick={setActiveSection}
-            /> )}
+         
             <NavigationItem
               id="account"
               icon={<Wallet className="w-5 h-5" />}
@@ -1923,6 +1973,14 @@ const AddEntityDialog = ({ onClose, onEntityAdded }) => {
               isActive={activeSection === 'history'}
               onClick={setActiveSection}
             />
+               {groupName === 'admin' && (
+              <NavigationItem
+                id="entity"
+                icon={<Wallet className="w-5 h-5" />}
+                label="Entity"
+                isActive={activeSection === 'entity'}
+                onClick={setActiveSection}
+              />)}
             {groupName === 'admin' && (
               <NavigationItem
                 id="users" // New Navigation Item for Users
