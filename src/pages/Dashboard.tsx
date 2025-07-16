@@ -345,7 +345,7 @@ const Dashboard = ({ username }) => {
           {/* Account Balance Card */}
           <div className="bg-gradient-to-br from-blue-300 to-purple-300 rounded-3xl p-8 border border-blue-400 shadow-lg transform hover:scale-105 transition-transform duration-300 ease-in-out"> {/* Enhanced card styling */}
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-xl font-bold text-white">Account Balance(BlueDoller)</h3> {/* Changed text color to white for contrast */}
+              <h3 className="text-xl font-bold text-white">Account Balance(BlueDollar)</h3> {/* Changed text color to white for contrast */}
               <DollarSign className="w-8 h-8 text-green-700" /> {/* Larger icon, adjusted color */}
             </div>
             <div className="text-4xl font-extrabold text-white"> {/* Larger and bolder text */}
@@ -1074,7 +1074,7 @@ const Dashboard = ({ username }) => {
     return (
       <div className="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center p-4">
         <div className="bg-white rounded-lg p-6 shadow-xl w-full max-w-md">
-          <h3 className="text-xl font-semibold mb-4">Issue Bluedoller</h3>
+          <h3 className="text-xl font-semibold mb-4">Issue BlueDollar</h3>
           <div className="space-y-4">
             <div>
               <label htmlFor="amount" className="block text-sm font-medium text-gray-700 mb-1">
