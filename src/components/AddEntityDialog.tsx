@@ -1,0 +1,244 @@
+import React, { useState, useEffect } from 'react';
+import { X } from 'lucide-react';
+import CheckboxMultiSelect from './ CheckboxMultiSelect.tsx';
+
+const AddEntityDialog = ({ onClose, onEntityAdded }) => {
+  const [name, setName] = useState('');
+  const [type, setType] = useState('');
+  const [managerId, setManagerId] = useState('');
+  const [selectedMembers, setSelectedMembers] = useState([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [managers, setManagers] = useState([]);
+  const [members, setMembers] = useState([]);
+  const [managersLoading, setManagersLoading] = useState(false);
+  const [membersLoading, setMembersLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const [users, setUsers] = useState([]);
+
+  const fetchManagers = async (token) => {
+    try {
+      const response = await fetch(`${process.env.REACT_APP_API_URL}/getAllUsers`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ message: 'Unknown error' }));
+        throw new Error(`HTTP error! status: ${response.status} - ${errorData.message || response.statusText}`);
+      }
+
+      const data = await response.json();
+      return (data || []).map(user => ({
+        id: user.id || user._id || user.userId,
+        name: user.name || user.fullName || user.username
+      }));
+    } catch (error) {
+      console.error('Error fetching managers:', error);
+      if (error.message === 'Failed to fetch') {
+        throw new Error('Failed to connect to the backend server. Please ensure the server is running and accessible at http://localhost:3010.');
+      }
+      throw error;
+    }
+  };
+
+  const fetchMembers = async (token) => {
+    try {
+      const response = await fetch(`${process.env.REACT_APP_API_URL}/getAllUsers`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ message: 'Unknown error' }));
+        throw new Error(`HTTP error! status: ${response.status} - ${errorData.message || response.statusText}`);
+      }
+
+      const data = await response.json();
+      return (data || []).map(user => ({
+        id: user.id || user._id || user.userId,
+        name: user.name || user.fullName || user.username
+      }));
+    } catch (error) {
+      console.error('Error fetching members:', error);
+      if (error.message === 'Failed to fetch') {
+        throw new Error('Failed to connect to the backend server. Please ensure the server is running and accessible at http://localhost:3010.');
+      }
+      throw error;
+    }
+  };
+
+  useEffect(() => {
+    const token = localStorage.getItem('token');
+
+    const loadData = async () => {
+      setManagersLoading(true);
+      setMembersLoading(true);
+      setError(null);
+
+      try {
+        const fetchedManagers = await fetchManagers(token);
+        setManagers(fetchedManagers);
+      } catch (err) {
+        console.error("Error fetching managers:", err);
+        setError(`Failed to load managers: ${err.message}`);
+      } finally {
+        setManagersLoading(false);
+      }
+
+      try {
+        const fetchedMembers = await fetchMembers(token);
+        setMembers(fetchedMembers);
+      } catch (err) {
+        console.error("Error fetching members:", err);
+        setError(prevErr => prevErr ? `${prevErr}\nFailed to load members: ${err.message}` : `Failed to load members: ${err.message}`);
+      } finally {
+        setMembersLoading(false);
+      }
+    };
+
+    loadData();
+  }, []);
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setError(null);
+
+    const entityPayload = {
+      name: name,
+      type: type,
+      description: '',
+      owner_id: managerId,
+      members: selectedMembers,
+      created_by: localStorage.getItem("name")
+    };
+
+    setIsLoading(true);
+    try {
+      const response = await fetch(`${process.env.REACT_APP_API_URL}/entity/create`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        },
+        body: JSON.stringify(entityPayload),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ message: 'No error message provided' }));
+        throw new Error(`HTTP error! status: ${response.status} - ${errorData.message || response.statusText}`);
+      }
+
+      const data = await response.json();
+      setUsers(data || [])
+      onClose();
+      onEntityAdded();
+
+    } catch (err) {
+      console.error("Error adding entity:", err);
+      if (err.message === 'Failed to fetch') {
+        setError('Failed to connect to the backend server for submission. Please ensure the server is running and accessible at http://localhost:3010.');
+      } else {
+        setError(`Failed to add entity: ${err.message}`);
+      }
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-lg p-8 w-full max-w-md border border-gray-200 relative">
+        <button onClick={onClose} className="absolute top-4 right-4 text-gray-500 hover:text-gray-700">
+          <X className="w-6 h-6" />
+        </button>
+        <h2 className="text-2xl font-bold mb-6 text-gray-800">Add New Entity</h2>
+
+        {error && (
+          <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4" role="alert">
+            <strong className="font-bold">Error!</strong>
+            <span className="block sm:inline"> {error}</span>
+          </div>
+        )}
+
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label htmlFor="type" className="block text-sm font-medium text-gray-700 mb-2">Entity Type</label>
+            <select
+              id="type"
+              value={type}
+              onChange={(e) => setType(e.target.value)}
+              className="w-full bg-gray-100 border border-gray-300 rounded-lg px-4 py-3 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              required
+            >
+              <option value="">Select a type</option>
+              <option value="coe">COE</option>
+              <option value="project">Project</option>
+            </select>
+          </div>
+          <div>
+            <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-2">Name</label>
+            <input
+              type="text"
+              id="name"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              className="w-full bg-gray-100 border border-gray-300 rounded-lg px-4 py-3 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              required
+            />
+          </div>
+          <div>
+            <label htmlFor="manager" className="block text-sm font-medium text-gray-700 mb-2">Select Manager</label>
+            <select
+              id="manager"
+              value={managerId}
+              onChange={(e) => setManagerId(e.target.value)}
+              className="w-full bg-gray-100 border border-gray-300 rounded-lg px-4 py-3 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              disabled={managersLoading}
+            >
+              <option value="">{managersLoading ? 'Loading managers...' : 'Select a manager'}</option>
+              {managers.map((manager) => (
+                <option key={manager.id} value={manager.id}>
+                  {manager.name}
+                </option>
+              ))}
+            </select>
+          </div>
+          <CheckboxMultiSelect
+            label="Select Members"
+            options={members}
+            selectedValues={selectedMembers}
+            onChange={setSelectedMembers}
+            disabled={membersLoading}
+            loading={membersLoading}
+          />
+
+          <button
+            type="submit"
+            className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 rounded-lg transition-colors duration-300 flex items-center justify-center"
+            disabled={isLoading || managersLoading || membersLoading}
+          >
+            {isLoading ? (
+              <>
+                <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                Adding Entity...
+              </>
+            ) : (
+              'Add Entity'
+            )}
+          </button>
+        </form>
+      </div>
+    </div>
+  );
+};
+
+export default AddEntityDialog;

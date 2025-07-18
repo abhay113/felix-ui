@@ -1,9 +1,9 @@
 import Keycloak from 'keycloak-js';
 
 const keycloak = new Keycloak({
-  url: 'https://iam-uat.cateina.com',
-  realm: 'FELIX-ASP',
-  clientId: 'react-ui'
+ url: process.env.REACT_APP_KEYCLOAK_URL as string,
+  realm: process.env.REACT_APP_KEYCLOAK_REALM as string,
+  clientId: process.env.REACT_APP_KEYCLOAK_CLIENT_ID as string,
 });
 
 let initialized = false;
